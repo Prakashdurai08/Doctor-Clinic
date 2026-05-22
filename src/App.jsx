@@ -1,6 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import "./App.css"
-// ─── Constants ───────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────
+//  ★ STEP 1: Paste your Google Apps Script Web App URL below ★
+// ─────────────────────────────────────────────────────────────
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbwMS-c22pTzIQI3CWE_15FnGjo1AIcJUcAi9xFCkcDs_eWLydAa43vHKMUAzSbP44Q/exec";
+//  ↑ Replace YOUR_SCRIPT_ID_HERE with your actual script ID
+//  Example: "https://script.google.com/macros/s/AKfycbxXXXXXXXX/exec"
+// ─────────────────────────────────────────────────────────────
+
 const CLINIC = {
   name: "MediCare Clinic",
   phone: "+91-9629622076",
@@ -9,50 +17,115 @@ const CLINIC = {
   address: "12, Health Avenue, Anna Nagar, Chennai – 600 040, Tamil Nadu",
 };
 
+// ─── Google Sheets Storage Layer ─────────────────────────────
+// All booking data is stored in Google Sheets (cloud).
+// This means ANY device can see bookings — patients book on
+// their phone, staff sees it instantly on their computer. ✅
 const LS = {
-  getBookings: () => { try { return JSON.parse(localStorage.getItem("clinic_bookings")) || []; } catch { return []; } },
-  saveBookings: (arr) => localStorage.setItem("clinic_bookings", JSON.stringify(arr)),
-  isAvailable: () => { const v = localStorage.getItem("clinic_availability"); return v === null ? true : v === "true"; },
+  // Clinic open/closed toggle — still stored locally per staff device
+  isAvailable: () => {
+    const v = localStorage.getItem("clinic_availability");
+    return v === null ? true : v === "true";
+  },
   setAvailability: (b) => localStorage.setItem("clinic_availability", String(b)),
-  addBooking: (data) => {
-    const bookings = LS.getBookings();
-    const entry = { 
-      ...data, 
-      id: Date.now().toString(36), 
-      status: "Pending", 
+
+  // ── Add a new booking (called when patient submits form) ──
+  addBooking: async (data) => {
+    const entry = {
+      ...data,
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      status: "Pending",
       createdAt: new Date().toISOString(),
       arrived: false,
       token: null,
       visitType: "Online",
       checkedInAt: null,
       completedAt: null,
+      action: "add",
     };
-    bookings.push(entry);
-    LS.saveBookings(bookings);
+    try {
+      await fetch(SHEET_URL, {
+        method: "POST",
+        body: JSON.stringify(entry),
+      });
+    } catch (err) {
+      console.error("Failed to save booking:", err);
+      throw new Error("Could not save booking. Please try again.");
+    }
     return entry;
   },
-  cleanupOldRecords: () => {
-    const bookings = LS.getBookings();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const filtered = bookings.filter(b => new Date(b.createdAt) > thirtyDaysAgo);
-    LS.saveBookings(filtered);
+
+  // ── Fetch ALL bookings (called when dashboard loads) ──────
+  fetchBookings: async () => {
+    try {
+      const res = await fetch(SHEET_URL + "?t=" + Date.now()); // cache-bust
+      const data = await res.json();
+      // Normalize boolean fields from Sheets (they come back as strings)
+      return data.map((b) => ({
+        ...b,
+        arrived: b.arrived === true || b.arrived === "TRUE" || b.arrived === "true",
+        token: b.token === "" || b.token === null ? null : Number(b.token) || null,
+      }));
+    } catch (err) {
+      console.error("Failed to fetch bookings:", err);
+      return [];
+    }
+  },
+
+  // ── Update specific fields on an existing booking ─────────
+  updateBooking: async (id, fields) => {
+    try {
+      await fetch(SHEET_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "update", id, ...fields }),
+      });
+    } catch (err) {
+      console.error("Failed to update booking:", err);
+    }
+  },
+
+  // ── Delete one booking ────────────────────────────────────
+  deleteBooking: async (id) => {
+    try {
+      await fetch(SHEET_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "delete", id }),
+      });
+    } catch (err) {
+      console.error("Failed to delete booking:", err);
+    }
+  },
+
+  // ── Delete ALL bookings ───────────────────────────────────
+  deleteAll: async () => {
+    try {
+      await fetch(SHEET_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "deleteAll" }),
+      });
+    } catch (err) {
+      console.error("Failed to clear bookings:", err);
+    }
   },
 };
 
-// Auto cleanup on load
-LS.cleanupOldRecords();
-
-const fmtDate = (iso) => iso ? new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "—";
-const esc = (s) => String(s || "").replace(/</g, "&lt;");
+// ─── Helpers ──────────────────────────────────────────────────
+const fmtDate = (iso) =>
+  iso
+    ? new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
+    : "—";
 
 function openWhatsApp(data) {
-  const msg = encodeURIComponent(`🏥 *New Appointment – ${CLINIC.name}*\n\n👤 ${data.name}\n🎂 Age: ${data.age}\n📞 ${data.phone}\n✉️ ${data.email || "—"}\n📅 ${data.datetime}\n📝 ${data.notes || "N/A"}\n\n_Sent via website_`);
+  const msg = encodeURIComponent(
+    `🏥 *New Appointment – ${CLINIC.name}*\n\n👤 ${data.name}\n🎂 Age: ${data.age}\n📞 ${data.phone}\n✉️ ${data.email || "—"}\n📅 ${data.datetime}\n📝 ${data.notes || "N/A"}\n\n_Sent via website_`
+  );
   window.open(`https://wa.me/${CLINIC.whatsapp}?text=${msg}`, "_blank");
 }
 function openEmail(data) {
   const s = encodeURIComponent(`Appointment Request – ${data.name}`);
-  const b = encodeURIComponent(`Name: ${data.name}\nAge: ${data.age}\nPhone: ${data.phone}\nEmail: ${data.email || "—"}\nDateTime: ${data.datetime}\nNotes: ${data.notes || "N/A"}`);
+  const b = encodeURIComponent(
+    `Name: ${data.name}\nAge: ${data.age}\nPhone: ${data.phone}\nEmail: ${data.email || "—"}\nDateTime: ${data.datetime}\nNotes: ${data.notes || "N/A"}`
+  );
   window.location.href = `mailto:${CLINIC.email}?subject=${s}&body=${b}`;
 }
 
@@ -63,7 +136,10 @@ function useFadeUp() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } }, { threshold: 0.1 });
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold: 0.1 }
+    );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
@@ -73,7 +149,16 @@ function useFadeUp() {
 function FadeUp({ children, delay = 0, style = {}, className = "" }) {
   const [ref, visible] = useFadeUp();
   return (
-    <div ref={ref} className={className} style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(30px)", transition: `opacity 0.6s ease ${delay}s, transform 0.6s ease ${delay}s`, ...style }}>
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(30px)",
+        transition: `opacity 0.6s ease ${delay}s, transform 0.6s ease ${delay}s`,
+        ...style,
+      }}
+    >
       {children}
     </div>
   );
@@ -141,7 +226,7 @@ function Footer({ setPage }) {
             <p style={{ marginTop: 6, fontSize: ".85rem" }}>📞 <a href={`tel:${CLINIC.phone}`} style={{ color: "var(--teal)" }}>{CLINIC.phone}</a></p>
             <div className="privacy-strip" style={{ marginTop: 16 }}>
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-              Your data is stored only on this device and shared via WhatsApp/email when you choose.
+              Your data is securely stored in the cloud and shared via WhatsApp/email when you choose.
             </div>
           </div>
           <div>
@@ -326,8 +411,9 @@ function PageBooking() {
   const [form, setForm] = useState({ name: "", age: "", phone: "", email: "", datetime: "", notes: "" });
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [lastBooking, setLastBooking] = useState(null);
-  const [step, setStep] = useState(1); // multi-step: 1 = personal, 2 = schedule
+  const [step, setStep] = useState(1);
 
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -335,14 +421,24 @@ function PageBooking() {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.age || !form.phone || !form.datetime) { setError("Please fill in all required fields."); return; }
+    if (!form.name || !form.age || !form.phone || !form.datetime) {
+      setError("Please fill in all required fields.");
+      return;
+    }
     setError("");
-    const booking = LS.addBooking(form);
-    setLastBooking(booking);
-    setSubmitted(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setSubmitting(true);
+    try {
+      const booking = await LS.addBooking(form);
+      setLastBooking(booking);
+      setSubmitted(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      setError("❌ Failed to submit. Please check your internet connection and try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!available) {
@@ -416,7 +512,7 @@ function PageBooking() {
         <form className="card booking-form" onSubmit={handleSubmit}>
           <div className="privacy-strip">
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-            Your data is stored only on this device and shared via WhatsApp/email when you choose.
+            Your booking is securely saved to our clinic database and visible to staff immediately.
           </div>
 
           {step === 1 && (
@@ -440,8 +536,15 @@ function PageBooking() {
                   <input name="email" type="email" className="form-control" placeholder="you@email.com" value={form.email} onChange={handleChange} />
                 </div>
               </div>
-              <button type="button" className="btn btn--primary" style={{ marginTop: 8 }}
-                onClick={() => { if (!form.name || !form.age || !form.phone) { setError("Please fill name, age, and phone first."); } else { setError(""); setStep(2); } }}>
+              <button
+                type="button"
+                className="btn btn--primary"
+                style={{ marginTop: 8 }}
+                onClick={() => {
+                  if (!form.name || !form.age || !form.phone) { setError("Please fill name, age, and phone first."); }
+                  else { setError(""); setStep(2); }
+                }}
+              >
                 Next: Schedule →
               </button>
             </>
@@ -460,7 +563,9 @@ function PageBooking() {
               </div>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 <button type="button" className="btn btn--outline" onClick={() => setStep(1)}>← Back</button>
-                <button type="submit" className="btn btn--primary" style={{ flex: 1 }}>📅 Submit Appointment Request</button>
+                <button type="submit" className="btn btn--primary" style={{ flex: 1 }} disabled={submitting}>
+                  {submitting ? "⏳ Submitting..." : "📅 Submit Appointment Request"}
+                </button>
               </div>
             </>
           )}
@@ -592,7 +697,7 @@ function PageReviews({ setPage }) {
         <div className="container">
           <span className="pill">Patient Stories</span>
           <h1>What Our Patients Say</h1>
-          <p>Real experiences from real patients who trust MediCare Clinic..</p>
+          <p>Real experiences from real patients who trust MediCare Clinic.</p>
         </div>
       </div>
 
@@ -676,7 +781,7 @@ function PageFAQ({ setPage }) {
     },
     {
       heading: "🔒 Privacy & Data", items: [
-        { q: "How is my booking data stored and used?", a: "When you book through our website, your details are saved only in your browser's local storage — they never leave your device unless you choose to share them via WhatsApp or email." },
+        { q: "How is my booking data stored and used?", a: "When you book through our website, your details are securely saved to our clinic's private Google Sheet database. Only authorized clinic staff can access this data." },
         { q: "Is my medical information kept confidential?", a: "Absolutely. All medical information shared during consultation is strictly confidential and protected under patient privacy norms. We do not share your health data with third parties." },
       ]
     },
@@ -817,21 +922,19 @@ function PageContact({ setPage }) {
                     <button type="submit" className="btn btn--primary" style={{ width: "100%", justifyContent: "center" }}>📤 Send Message</button>
                   </form>
                 ) : (
-                  <>
-                    <div className="success-box" style={{ textAlign: "center" }}>
-                      <div className="success-box__icon">✅</div>
-                      <h3>Message Received!</h3>
-                      <p>Thank you for reaching out. We'll get back to you shortly.</p>
-                      <div style={{ display: "flex", gap: 12, marginTop: 20, flexWrap: "wrap", justifyContent: "center" }}>
-                        <button className="btn btn--success" onClick={() => { const s = encodeURIComponent(`Message from ${form.name}`); const b = encodeURIComponent(`Name: ${form.name}\nPhone: ${form.phone}\n\nMessage:\n${form.msg}`); window.open(`https://wa.me/${CLINIC.whatsapp}?text=${encodeURIComponent(`Name: ${form.name}\nPhone: ${form.phone}\n\nMessage:\n${form.msg}`)}`, "_blank"); }}>
-                          💬 Send via WhatsApp
-                        </button>
-                        <button className="btn btn--outline" onClick={() => { const s = encodeURIComponent(`Message from ${form.name}`); const b = encodeURIComponent(`Name: ${form.name}\nPhone: ${form.phone}\n\nMessage:\n${form.msg}`); window.location.href = `mailto:${CLINIC.email}?subject=${s}&body=${b}`; }}>
-                          ✉️ Send via Email
-                        </button>
-                      </div>
+                  <div className="success-box" style={{ textAlign: "center" }}>
+                    <div className="success-box__icon">✅</div>
+                    <h3>Message Received!</h3>
+                    <p>Thank you for reaching out. We'll get back to you shortly.</p>
+                    <div style={{ display: "flex", gap: 12, marginTop: 20, flexWrap: "wrap", justifyContent: "center" }}>
+                      <button className="btn btn--success" onClick={() => { window.open(`https://wa.me/${CLINIC.whatsapp}?text=${encodeURIComponent(`Name: ${form.name}\nPhone: ${form.phone}\n\nMessage:\n${form.msg}`)}`, "_blank"); }}>
+                        💬 Send via WhatsApp
+                      </button>
+                      <button className="btn btn--outline" onClick={() => { const s = encodeURIComponent(`Message from ${form.name}`); const b = encodeURIComponent(`Name: ${form.name}\nPhone: ${form.phone}\n\nMessage:\n${form.msg}`); window.location.href = `mailto:${CLINIC.email}?subject=${s}&body=${b}`; }}>
+                        ✉️ Send via Email
+                      </button>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
               <div style={{ marginTop: 24 }}>
@@ -852,146 +955,65 @@ function PageContact({ setPage }) {
 const DASHBOARD_PIN = "1234"; // ← CHANGE YOUR PIN HERE
 
 function DashboardGate({ children }) {
-  const [unlocked, setUnlocked] = useState(
-    () => sessionStorage.getItem("dash_unlocked") === "true"
-  );
-
+  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem("dash_unlocked") === "true");
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [attempts, setAttempts] = useState(0);
   const [locked, setLocked] = useState(false);
   const [lockTimer, setLockTimer] = useState(0);
 
-  // Lock countdown
   useEffect(() => {
     if (!locked) return;
-
     const id = setInterval(() => {
       setLockTimer((t) => {
-        if (t <= 1) {
-          clearInterval(id);
-          setLocked(false);
-          setAttempts(0);
-          return 0;
-        }
+        if (t <= 1) { clearInterval(id); setLocked(false); setAttempts(0); return 0; }
         return t - 1;
       });
     }, 1000);
-
     return () => clearInterval(id);
   }, [locked]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     if (locked) return;
-
     if (pin === DASHBOARD_PIN) {
       sessionStorage.setItem("dash_unlocked", "true");
       setUnlocked(true);
       setError("");
     } else {
       const next = attempts + 1;
-
       setAttempts(next);
       setPin("");
-
-      if (next >= 3) {
-        setLocked(true);
-        setLockTimer(30);
-        setError("Too many attempts.");
-      } else {
-        setError(
-          `Incorrect PIN. ${3 - next} attempt${
-            3 - next === 1 ? "" : "s"
-          } remaining.`
-        );
-      }
+      if (next >= 3) { setLocked(true); setLockTimer(30); setError("Too many attempts."); }
+      else { setError(`Incorrect PIN. ${3 - next} attempt${3 - next === 1 ? "" : "s"} remaining.`); }
     }
   };
 
   if (unlocked) return children;
 
   return (
-    <div
-      className="page-wrapper"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "80vh",
-      }}
-    >
+    <div className="page-wrapper" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
       <div style={{ width: "100%", maxWidth: 380, padding: "0 20px" }}>
         <div className="card" style={{ textAlign: "center", padding: 40 }}>
           <div style={{ fontSize: "3rem", marginBottom: 16 }}>🔐</div>
-
-          <h2 style={{ marginBottom: 10 }}>
-            Staff Dashboard Protected
-          </h2>
-
-          <p
-            style={{
-              color: "var(--gray-600)",
-              marginBottom: 24,
-            }}
-          >
-            Enter clinic PIN to continue
-          </p>
-
+          <h2 style={{ marginBottom: 10 }}>Staff Dashboard Protected</h2>
+          <p style={{ color: "var(--gray-600)", marginBottom: 24 }}>Enter clinic PIN to continue</p>
           <form onSubmit={handleSubmit}>
             <input
-              type="password"
-              className="form-control"
-              placeholder="Enter PIN"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              disabled={locked}
-              maxLength={8}
-              autoFocus
-              style={{
-                textAlign: "center",
-                fontSize: "1.4rem",
-                letterSpacing: ".3em",
-                marginBottom: 16,
-              }}
+              type="password" className="form-control" placeholder="Enter PIN"
+              value={pin} onChange={(e) => setPin(e.target.value)} disabled={locked} maxLength={8} autoFocus
+              style={{ textAlign: "center", fontSize: "1.4rem", letterSpacing: ".3em", marginBottom: 16 }}
             />
-
             {error && (
-              <div
-                className="alert alert--danger"
-                style={{ marginBottom: 16 }}
-              >
-                {locked
-                  ? `🔒 Locked (${lockTimer}s)`
-                  : `❌ ${error}`}
+              <div className="alert alert--danger" style={{ marginBottom: 16 }}>
+                {locked ? `🔒 Locked (${lockTimer}s)` : `❌ ${error}`}
               </div>
             )}
-
-            <button
-              type="submit"
-              className="btn btn--primary"
-              style={{
-                width: "100%",
-                justifyContent: "center",
-              }}
-              disabled={!pin || locked}
-            >
-              {locked
-                ? `Locked (${lockTimer}s)`
-                : "🔓 Unlock Dashboard"}
+            <button type="submit" className="btn btn--primary" style={{ width: "100%", justifyContent: "center" }} disabled={!pin || locked}>
+              {locked ? `Locked (${lockTimer}s)` : "🔓 Unlock Dashboard"}
             </button>
           </form>
-
-          <p
-            style={{
-              marginTop: 18,
-              fontSize: ".8rem",
-              color: "var(--gray-400)",
-            }}
-          >
-            Authorized staff only
-          </p>
+          <p style={{ marginTop: 18, fontSize: ".8rem", color: "var(--gray-400)" }}>Authorized staff only</p>
         </div>
       </div>
     </div>
@@ -999,23 +1021,37 @@ function DashboardGate({ children }) {
 }
 
 function PageDashboard() {
-  return (
-    <DashboardGate>
-      <PageDashboardContent />
-    </DashboardGate>
-  );
+  return <DashboardGate><PageDashboardContent /></DashboardGate>;
 }
 
-// ─── Page: Dashboard ──────────────────────────────────────────
+// ─── Page: Dashboard Content ──────────────────────────────────
 function PageDashboardContent() {
-  const [bookings, setBookings] = useState(LS.getBookings());
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [available, setAvailableState] = useState(LS.isAvailable());
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [walkInForm, setWalkInForm] = useState({ name: "", age: "", phone: "", notes: "" });
   const [showWalkInForm, setShowWalkInForm] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
 
-  const refresh = () => setBookings(LS.getBookings());
+  // ── Fetch bookings from Google Sheets ──────────────────────
+  const refresh = async (silent = false) => {
+    if (!silent) setRefreshing(true);
+    const data = await LS.fetchBookings();
+    setBookings(data);
+    setLoading(false);
+    setRefreshing(false);
+    setLastRefreshed(new Date());
+  };
+
+  // Load on mount + auto-refresh every 30 seconds
+  useEffect(() => {
+    refresh();
+    const interval = setInterval(() => refresh(true), 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const toggleAvail = () => {
     const next = !available;
@@ -1023,45 +1059,36 @@ function PageDashboardContent() {
     setAvailableState(next);
   };
 
-  const changeStatus = (id, status) => {
-    const updated = bookings.map(b => b.id === id ? { ...b, status } : b);
-    LS.saveBookings(updated);
-    setBookings(updated);
+  const changeStatus = async (id, status) => {
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
+    await LS.updateBooking(id, { status });
   };
 
-  const markArrived = (id) => {
+  const markArrived = async (id) => {
     const todayStr = new Date().toISOString().slice(0, 10);
     const todayArrivals = bookings.filter(b => b.arrived && b.checkedInAt?.slice(0, 10) === todayStr);
     const nextToken = todayArrivals.length + 1;
-    
-    const updated = bookings.map(b => 
-      b.id === id 
-        ? { 
-            ...b, 
-            arrived: true, 
-            token: nextToken, 
-            checkedInAt: new Date().toISOString(),
-            status: "Confirmed"
-          } 
-        : b
-    );
-    LS.saveBookings(updated);
-    setBookings(updated);
+    const fields = {
+      arrived: true,
+      token: nextToken,
+      checkedInAt: new Date().toISOString(),
+      status: "Confirmed",
+    };
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, ...fields } : b));
+    await LS.updateBooking(id, fields);
   };
 
-  const addWalkIn = (e) => {
+  const addWalkIn = async (e) => {
     e.preventDefault();
     if (!walkInForm.name || !walkInForm.age || !walkInForm.phone) {
       alert("Please fill in name, age, and phone.");
       return;
     }
-
     const todayStr = new Date().toISOString().slice(0, 10);
     const todayArrivals = bookings.filter(b => b.arrived && b.checkedInAt?.slice(0, 10) === todayStr);
     const nextToken = todayArrivals.length + 1;
-
     const newBooking = {
-      id: Date.now().toString(36),
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
       name: walkInForm.name,
       age: walkInForm.age,
       phone: walkInForm.phone,
@@ -1075,36 +1102,30 @@ function PageDashboardContent() {
       visitType: "Walk-In",
       checkedInAt: new Date().toISOString(),
       completedAt: null,
+      action: "add",
     };
-
-    const updated = [...bookings, newBooking];
-    LS.saveBookings(updated);
-    setBookings(updated);
+    setBookings(prev => [...prev, newBooking]);
     setWalkInForm({ name: "", age: "", phone: "", notes: "" });
     setShowWalkInForm(false);
+    await fetch(SHEET_URL, { method: "POST", body: JSON.stringify(newBooking) });
   };
 
-  const markCompleted = (id) => {
-    const updated = bookings.map(b => 
-      b.id === id 
-        ? { ...b, status: "Completed", completedAt: new Date().toISOString() } 
-        : b
-    );
-    LS.saveBookings(updated);
-    setBookings(updated);
+  const markCompleted = async (id) => {
+    const fields = { status: "Completed", completedAt: new Date().toISOString() };
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, ...fields } : b));
+    await LS.updateBooking(id, fields);
   };
 
-  const deleteBooking = (id) => {
+  const deleteBooking = async (id) => {
     if (!confirm("Delete this booking?")) return;
-    const updated = bookings.filter(b => b.id !== id);
-    LS.saveBookings(updated);
-    setBookings(updated);
+    setBookings(prev => prev.filter(b => b.id !== id));
+    await LS.deleteBooking(id);
   };
 
-  const clearAll = () => {
+  const clearAll = async () => {
     if (!confirm("Clear ALL bookings? This cannot be undone.")) return;
-    LS.saveBookings([]);
     setBookings([]);
+    await LS.deleteAll();
   };
 
   const callNextPatient = () => {
@@ -1112,12 +1133,7 @@ function PageDashboardContent() {
     const todayQueue = bookings
       .filter(b => b.arrived && b.checkedInAt?.slice(0, 10) === todayStr && b.status === "Confirmed")
       .sort((a, b) => (a.token || 0) - (b.token || 0));
-    
-    if (todayQueue.length === 0) {
-      alert("No patients in queue.");
-      return;
-    }
-
+    if (todayQueue.length === 0) { alert("No patients in queue."); return; }
     const nextPatient = todayQueue[0];
     alert(`🔔 Calling: ${nextPatient.name} (Token #${nextPatient.token})`);
   };
@@ -1126,15 +1142,8 @@ function PageDashboardContent() {
     if (!bookings.length) return alert("No bookings to export.");
     const headers = ["ID", "Name", "Age", "Phone", "Email", "DateTime", "Notes", "Status", "Token", "Visit Type", "Arrival Time", "Completed At", "CreatedAt"];
     const rows = bookings.map(b => [
-      b.id, 
-      b.name, 
-      b.age, 
-      b.phone, 
-      b.email, 
-      b.datetime, 
-      (b.notes || "").replace(/,/g, " "), 
-      b.status, 
-      b.token || "—", 
+      b.id, b.name, b.age, b.phone, b.email, b.datetime,
+      (b.notes || "").replace(/,/g, " "), b.status, b.token || "—",
       b.visitType || "Online",
       b.checkedInAt ? fmtDate(b.checkedInAt) : "—",
       b.completedAt ? fmtDate(b.completedAt) : "—",
@@ -1148,7 +1157,7 @@ function PageDashboardContent() {
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayBookings = bookings.filter(b => b.datetime?.slice(0, 10) === todayStr);
   const todayArrivals = bookings.filter(b => b.arrived && b.checkedInAt?.slice(0, 10) === todayStr);
-  const todayQueue = todayArrivals.sort((a, b) => (a.token || 0) - (b.token || 0));
+  const todayQueue = [...todayArrivals].sort((a, b) => (a.token || 0) - (b.token || 0));
   const waitingOnline = bookings.filter(b => !b.arrived && b.visitType === "Online" && b.datetime?.slice(0, 10) === todayStr);
   const completedToday = bookings.filter(b => b.status === "Completed" && b.completedAt?.slice(0, 10) === todayStr);
 
@@ -1182,6 +1191,11 @@ function PageDashboardContent() {
               <span className="pill" style={{ background: "rgba(255,255,255,.2)", color: "#fff" }}>Staff Dashboard</span>
               <h1 style={{ color: "#fff", marginTop: 10 }}>Queue Management System</h1>
               <p style={{ opacity: .85 }}>{new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+              {lastRefreshed && (
+                <p style={{ opacity: .6, fontSize: ".8rem", marginTop: 4 }}>
+                  Last synced: {lastRefreshed.toLocaleTimeString("en-IN", { timeStyle: "short" })}
+                </p>
+              )}
             </div>
             <div className="avail-badge">
               <span className={`avail-dot${available ? " avail-dot--open" : " avail-dot--closed"}`} />
@@ -1191,12 +1205,14 @@ function PageDashboardContent() {
         </div>
       </div>
 
-      {/* Today's Stats */}
+      {/* Stats */}
       <div className="container" style={{ paddingTop: 28, paddingBottom: 8 }}>
         <div className="dash-stats">
           {stats.map(s => (
             <div key={s.lbl} className="dash-stat">
-              <div className="dash-stat__num" style={{ color: s.color }}>{s.num}</div>
+              <div className="dash-stat__num" style={{ color: s.color }}>
+                {loading ? "…" : s.num}
+              </div>
               <div className="dash-stat__lbl">{s.lbl}</div>
             </div>
           ))}
@@ -1215,6 +1231,13 @@ function PageDashboardContent() {
             </label>
             <div style={{ flex: 1 }} />
             <button className="btn btn--primary btn--sm" onClick={callNextPatient}>📢 Call Next Patient</button>
+            <button
+              className="btn btn--outline btn--sm"
+              onClick={() => refresh(false)}
+              disabled={refreshing}
+            >
+              {refreshing ? "⏳ Syncing…" : "🔄 Refresh"}
+            </button>
             <button className="btn btn--outline btn--sm" onClick={exportCSV}>⬇ Export CSV</button>
             <button className="btn btn--danger btn--sm" onClick={clearAll}>🗑 Clear All</button>
           </div>
@@ -1237,7 +1260,7 @@ function PageDashboardContent() {
                     <tr key={b.id}>
                       <td><span className="token-badge">#{b.token}</span></td>
                       <td><strong>{b.name}</strong></td>
-                      <td><span className={`visit-type-pill visit-type-pill--${b.visitType?.toLowerCase()}`}>{b.visitType}</span></td>
+                      <td><span className={`visit-type-pill visit-type-pill--${(b.visitType || "online").toLowerCase()}`}>{b.visitType}</span></td>
                       <td>{b.checkedInAt ? fmtDate(b.checkedInAt) : "—"}</td>
                       <td><span className={`status-pill status-pill--${b.status.toLowerCase()}`}>{b.status}</span></td>
                       <td>
@@ -1310,7 +1333,7 @@ function PageDashboardContent() {
         </div>
       </div>
 
-      {/* All bookings */}
+      {/* All Bookings */}
       <div className="container" style={{ marginBottom: 40 }}>
         <div className="dash-card">
           <div className="dash-card__head">
@@ -1322,33 +1345,52 @@ function PageDashboardContent() {
               <button key={v} className={`tab${activeTab === v ? " active" : ""}`} onClick={() => setActiveTab(v)}>{l}</button>
             ))}
           </div>
-          {filtered.length === 0 ? (
+
+          {loading ? (
+            <div className="no-data" style={{ padding: "40px 20px" }}>
+              <div style={{ fontSize: "2rem", marginBottom: 12 }}>⏳</div>
+              <p>Loading bookings from database…</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="no-data">📋 No bookings found.</div>
           ) : (
             <div className="table-wrap">
               <table>
-                <thead><tr><th>Patient</th><th>Contact</th><th>Date & Time</th><th>Token</th><th>Type</th><th>Status</th><th>Notes</th><th>Change</th><th>Del</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Patient</th><th>Contact</th><th>Date & Time</th>
+                    <th>Token</th><th>Type</th><th>Status</th>
+                    <th>Notes</th><th>Change</th><th>Del</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {filtered.map(b => (
                     <tr key={b.id}>
                       <td><strong>{b.name}</strong><br /><small style={{ color: "var(--gray-400)" }}>Age: {b.age}</small></td>
-                      <td><a href={`tel:${b.phone}`} style={{ color: "var(--teal-dark)" }}>{b.phone}</a><br /><small style={{ color: "var(--gray-400)" }}>{b.email || "—"}</small></td>
+                      <td>
+                        <a href={`tel:${b.phone}`} style={{ color: "var(--teal-dark)" }}>{b.phone}</a>
+                        <br /><small style={{ color: "var(--gray-400)" }}>{b.email || "—"}</small>
+                      </td>
                       <td style={{ whiteSpace: "nowrap" }}>{fmtDate(b.datetime)}</td>
                       <td>{b.token ? <span className="token-badge">#{b.token}</span> : "—"}</td>
-                      <td><span className={`visit-type-pill visit-type-pill--${b.visitType?.toLowerCase()}`}>{b.visitType}</span></td>
-                      <td><span className={`status-pill status-pill--${b.status.toLowerCase()}`}>{b.status}</span></td>
+                      <td><span className={`visit-type-pill visit-type-pill--${(b.visitType || "online").toLowerCase()}`}>{b.visitType}</span></td>
+                      <td><span className={`status-pill status-pill--${(b.status || "pending").toLowerCase()}`}>{b.status}</span></td>
                       <td style={{ maxWidth: 160, fontSize: ".82rem" }}>{b.notes || "—"}</td>
                       <td>
                         <select value={b.status} onChange={e => changeStatus(b.id, e.target.value)} className="form-control" style={{ fontSize: ".8rem", padding: "4px 8px" }}>
                           <option>Pending</option><option>Confirmed</option><option>Completed</option><option>Cancelled</option>
                         </select>
                       </td>
-                      <td><button className="btn btn--danger btn--sm" style={{ padding: "4px 10px" }} onClick={() => deleteBooking(b.id)}>✕</button></td>
+                      <td>
+                        <button className="btn btn--danger btn--sm" style={{ padding: "4px 10px" }} onClick={() => deleteBooking(b.id)}>✕</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <p style={{ marginTop: 10, fontSize: ".8rem", color: "var(--gray-400)" }}>Showing {filtered.length} of {bookings.length} bookings</p>
+              <p style={{ marginTop: 10, fontSize: ".8rem", color: "var(--gray-400)" }}>
+                Showing {filtered.length} of {bookings.length} bookings · Auto-refreshes every 30 seconds
+              </p>
             </div>
           )}
         </div>
