@@ -5,8 +5,6 @@ import "./App.css"
 //  ★ STEP 1: Paste your Google Apps Script Web App URL below ★
 // ─────────────────────────────────────────────────────────────
 const SHEET_URL = "https://script.google.com/macros/s/AKfycbwMS-c22pTzIQI3CWE_15FnGjo1AIcJUcAi9xFCkcDs_eWLydAa43vHKMUAzSbP44Q/exec";
-//  ↑ Replace YOUR_SCRIPT_ID_HERE with your actual script ID
-//  Example: "https://script.google.com/macros/s/AKfycbxXXXXXXXX/exec"
 // ─────────────────────────────────────────────────────────────
 
 const CLINIC = {
@@ -18,18 +16,13 @@ const CLINIC = {
 };
 
 // ─── Google Sheets Storage Layer ─────────────────────────────
-// All booking data is stored in Google Sheets (cloud).
-// This means ANY device can see bookings — patients book on
-// their phone, staff sees it instantly on their computer. ✅
 const LS = {
-  // Clinic open/closed toggle — still stored locally per staff device
   isAvailable: () => {
     const v = localStorage.getItem("clinic_availability");
     return v === null ? true : v === "true";
   },
   setAvailability: (b) => localStorage.setItem("clinic_availability", String(b)),
 
-  // ── Add a new booking (called when patient submits form) ──
   addBooking: async (data) => {
     const entry = {
       ...data,
@@ -55,12 +48,10 @@ const LS = {
     return entry;
   },
 
-  // ── Fetch ALL bookings (called when dashboard loads) ──────
   fetchBookings: async () => {
     try {
-      const res = await fetch(SHEET_URL + "?t=" + Date.now()); // cache-bust
+      const res = await fetch(SHEET_URL + "?t=" + Date.now());
       const data = await res.json();
-      // Normalize boolean fields from Sheets (they come back as strings)
       return data.map((b) => ({
         ...b,
         arrived: b.arrived === true || b.arrived === "TRUE" || b.arrived === "true",
@@ -72,7 +63,6 @@ const LS = {
     }
   },
 
-  // ── Update specific fields on an existing booking ─────────
   updateBooking: async (id, fields) => {
     try {
       await fetch(SHEET_URL, {
@@ -84,7 +74,6 @@ const LS = {
     }
   },
 
-  // ── Delete one booking ────────────────────────────────────
   deleteBooking: async (id) => {
     try {
       await fetch(SHEET_URL, {
@@ -96,7 +85,6 @@ const LS = {
     }
   },
 
-  // ── Delete ALL bookings ───────────────────────────────────
   deleteAll: async () => {
     try {
       await fetch(SHEET_URL, {
@@ -1035,8 +1023,9 @@ function PageDashboardContent() {
   const [walkInForm, setWalkInForm] = useState({ name: "", age: "", phone: "", notes: "" });
   const [showWalkInForm, setShowWalkInForm] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(null);
+  // ── NEW: 30-day history toggle ──
+  const [showHistory, setShowHistory] = useState(false);
 
-  // ── Fetch bookings from Google Sheets ──────────────────────
   const refresh = async (silent = false) => {
     if (!silent) setRefreshing(true);
     const data = await LS.fetchBookings();
@@ -1046,7 +1035,6 @@ function PageDashboardContent() {
     setLastRefreshed(new Date());
   };
 
-  // Load on mount + auto-refresh every 30 seconds
   useEffect(() => {
     refresh();
     const interval = setInterval(() => refresh(true), 30000);
@@ -1155,25 +1143,45 @@ function PageDashboardContent() {
   };
 
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todayBookings = bookings.filter(b => b.datetime?.slice(0, 10) === todayStr);
+
+  // ── UPDATED: Today's Bookings = submitted today AND scheduled today ──
+  const todayBookings = bookings.filter(
+    b => b.createdAt?.slice(0, 10) === todayStr && b.datetime?.slice(0, 10) === todayStr
+  );
+
+  // ── NEW: Future pending = scheduled after today, still Pending ──
+  const futurePending = bookings.filter(
+    b => b.datetime?.slice(0, 10) > todayStr && b.status === "Pending"
+  );
+
   const todayArrivals = bookings.filter(b => b.arrived && b.checkedInAt?.slice(0, 10) === todayStr);
   const todayQueue = [...todayArrivals].sort((a, b) => (a.token || 0) - (b.token || 0));
   const waitingOnline = bookings.filter(b => !b.arrived && b.visitType === "Online" && b.datetime?.slice(0, 10) === todayStr);
   const completedToday = bookings.filter(b => b.status === "Completed" && b.completedAt?.slice(0, 10) === todayStr);
 
-  const filtered = bookings.filter(b => {
+  // ── UPDATED: 4 stat cards with new Future Pending card ──
+  const stats = [
+    { num: todayBookings.length,  lbl: "Today's Bookings",  color: "var(--teal)",    icon: "📅" },
+    { num: futurePending.length,  lbl: "Pending (Future)",  color: "#9b59b6",        icon: "⏳" },
+    { num: todayArrivals.length,  lbl: "Arrived",           color: "var(--success)", icon: "✅" },
+    { num: completedToday.length, lbl: "Completed",         color: "var(--blue)",    icon: "🏁" },
+  ];
+
+  // ── Base filter (search + tab) ──
+  const baseFiltered = bookings.filter(b => {
     const q = search.toLowerCase();
     const matchSearch = !q || b.name?.toLowerCase().includes(q) || b.phone?.toLowerCase().includes(q);
     const matchTab = activeTab === "all" || b.status?.toLowerCase() === activeTab;
     return matchSearch && matchTab;
   }).sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
 
-  const stats = [
-    { num: todayBookings.length, lbl: "Today's Bookings", color: "var(--teal)" },
-    { num: todayArrivals.length, lbl: "Arrived", color: "var(--success)" },
-    { num: waitingOnline.length, lbl: "Waiting Arrival", color: "#d69e2e" },
-    { num: completedToday.length, lbl: "Completed", color: "var(--blue)" },
-  ];
+  // ── When history is ON, show only last 30 days; otherwise show all ──
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const filtered = showHistory
+    ? baseFiltered.filter(b => new Date(b.createdAt) >= thirtyDaysAgo)
+    : baseFiltered;
 
   return (
     <div className="page-wrapper">
@@ -1210,6 +1218,7 @@ function PageDashboardContent() {
         <div className="dash-stats">
           {stats.map(s => (
             <div key={s.lbl} className="dash-stat">
+              <div style={{ fontSize: "1.4rem", marginBottom: 4 }}>{s.icon}</div>
               <div className="dash-stat__num" style={{ color: s.color }}>
                 {loading ? "…" : s.num}
               </div>
@@ -1217,6 +1226,48 @@ function PageDashboardContent() {
             </div>
           ))}
         </div>
+
+        {/* ── NEW: Future Pending alert banner (only when count > 0) ── */}
+        {futurePending.length > 0 && (
+          <div style={{
+            background: "#f3e8ff",
+            border: "1px solid #c084fc",
+            borderRadius: 10,
+            padding: "12px 18px",
+            marginTop: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
+          }}>
+            <span style={{ fontSize: "1.2rem" }}>⏳</span>
+            <div style={{ flex: 1 }}>
+              <strong style={{ color: "#7e22ce" }}>
+                {futurePending.length} future appointment{futurePending.length > 1 ? "s" : ""} waiting for confirmation
+              </strong>
+              <div style={{ fontSize: ".82rem", color: "#6b21a8", marginTop: 3 }}>
+                {futurePending.slice(0, 3).map(b => (
+                  <span key={b.id} style={{ marginRight: 12 }}>
+                    👤 {b.name} — {fmtDate(b.datetime)}
+                  </span>
+                ))}
+                {futurePending.length > 3 && <span>+{futurePending.length - 3} more</span>}
+              </div>
+            </div>
+            <button
+              className="btn btn--sm"
+              style={{ background: "#7e22ce", color: "#fff", border: "none" }}
+              onClick={() => {
+                setActiveTab("pending");
+                setSearch("");
+                setShowHistory(false);
+                window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+              }}
+            >
+              View All →
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Controls */}
@@ -1231,11 +1282,7 @@ function PageDashboardContent() {
             </label>
             <div style={{ flex: 1 }} />
             <button className="btn btn--primary btn--sm" onClick={callNextPatient}>📢 Call Next Patient</button>
-            <button
-              className="btn btn--outline btn--sm"
-              onClick={() => refresh(false)}
-              disabled={refreshing}
-            >
+            <button className="btn btn--outline btn--sm" onClick={() => refresh(false)} disabled={refreshing}>
               {refreshing ? "⏳ Syncing…" : "🔄 Refresh"}
             </button>
             <button className="btn btn--outline btn--sm" onClick={exportCSV}>⬇ Export CSV</button>
@@ -1333,16 +1380,58 @@ function PageDashboardContent() {
         </div>
       </div>
 
+      {/* ── NEW: 30-Day History Toggle Button ── */}
+      <div className="container" style={{ marginBottom: 8 }}>
+        <button
+          className={`btn ${showHistory ? "btn--primary" : "btn--outline"}`}
+          onClick={() => setShowHistory(h => !h)}
+          style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+        >
+          🗓 {showHistory ? "Hide History (Last 30 Days)" : "Show 30-Day History"}
+        </button>
+        {showHistory && (
+          <span style={{ marginLeft: 12, fontSize: ".85rem", color: "var(--gray-500)" }}>
+            Showing bookings from {thirtyDaysAgo.toLocaleDateString("en-IN", { dateStyle: "medium" })} onwards
+          </span>
+        )}
+      </div>
+
       {/* All Bookings */}
       <div className="container" style={{ marginBottom: 40 }}>
         <div className="dash-card">
           <div className="dash-card__head">
-            <h3 className="dash-card__title">📋 All Bookings</h3>
-            <input className="form-control" style={{ maxWidth: 240 }} placeholder="Search by name or phone…" value={search} onChange={e => setSearch(e.target.value)} />
+            <h3 className="dash-card__title">
+              📋 {showHistory ? "Last 30 Days — All Bookings" : "All Bookings"}
+            </h3>
+            <input
+              className="form-control"
+              style={{ maxWidth: 240 }}
+              placeholder="Search by name or phone…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
           </div>
+
           <div className="tabs">
             {[["all", "All"], ["pending", "Pending"], ["confirmed", "Confirmed"], ["completed", "Completed"], ["cancelled", "Cancelled"]].map(([v, l]) => (
-              <button key={v} className={`tab${activeTab === v ? " active" : ""}`} onClick={() => setActiveTab(v)}>{l}</button>
+              <button key={v} className={`tab${activeTab === v ? " active" : ""}`} onClick={() => setActiveTab(v)}>
+                {l}
+                {/* Purple badge on Pending tab when future bookings exist */}
+                {v === "pending" && futurePending.length > 0 && (
+                  <span style={{
+                    marginLeft: 6,
+                    background: "#9b59b6",
+                    color: "#fff",
+                    borderRadius: 10,
+                    padding: "1px 7px",
+                    fontSize: ".72rem",
+                    fontWeight: 700,
+                    verticalAlign: "middle",
+                  }}>
+                    {futurePending.length}
+                  </span>
+                )}
+              </button>
             ))}
           </div>
 
@@ -1365,8 +1454,24 @@ function PageDashboardContent() {
                 </thead>
                 <tbody>
                   {filtered.map(b => (
-                    <tr key={b.id}>
-                      <td><strong>{b.name}</strong><br /><small style={{ color: "var(--gray-400)" }}>Age: {b.age}</small></td>
+                    <tr
+                      key={b.id}
+                      style={
+                        // Highlight future pending rows in soft purple
+                        b.datetime?.slice(0, 10) > todayStr && b.status === "Pending"
+                          ? { background: "#faf5ff", borderLeft: "3px solid #c084fc" }
+                          : {}
+                      }
+                    >
+                      <td>
+                        <strong>{b.name}</strong>
+                        <br /><small style={{ color: "var(--gray-400)" }}>Age: {b.age}</small>
+                        {b.datetime?.slice(0, 10) > todayStr && b.status === "Pending" && (
+                          <div style={{ fontSize: ".7rem", color: "#7e22ce", marginTop: 2, fontWeight: 600 }}>
+                            📆 Future Booking
+                          </div>
+                        )}
+                      </td>
                       <td>
                         <a href={`tel:${b.phone}`} style={{ color: "var(--teal-dark)" }}>{b.phone}</a>
                         <br /><small style={{ color: "var(--gray-400)" }}>{b.email || "—"}</small>
@@ -1389,7 +1494,8 @@ function PageDashboardContent() {
                 </tbody>
               </table>
               <p style={{ marginTop: 10, fontSize: ".8rem", color: "var(--gray-400)" }}>
-                Showing {filtered.length} of {bookings.length} bookings · Auto-refreshes every 30 seconds
+                Showing {filtered.length} of {bookings.length} bookings
+                {showHistory ? " · Last 30 days" : ""} · Auto-refreshes every 30 seconds
               </p>
             </div>
           )}
