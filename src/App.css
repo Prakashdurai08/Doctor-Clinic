@@ -583,7 +583,7 @@ tbody tr:hover { background: var(--off-white); }
 .footer__grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 32px; margin-bottom: 32px; }
 .footer__brand p { font-size: .9rem; opacity: .85; line-height: 1.6; }
 .footer__links { list-style: none; }
-.footer__links li { margin-bottom: 10px; }
+.footer__links li { margin-top: 15px; margin-bottom: 10px; }
 .footer__links button { color: #fff; opacity: .8; transition: var(--transition); }
 .footer__links button:hover { opacity: 1; }
 .footer__bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.1); font-size: .85rem; opacity: .7; }
