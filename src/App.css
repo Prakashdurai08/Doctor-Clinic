@@ -1,27 +1,32 @@
 /*
    MediCare Clinic – React Design System
-   Mobile-first | Teal/Blue medical aesthetic
+   Mobile-first | Purple/Violet medical aesthetic
+   ============================================================
+   THEME CHANGE: All teal/green replaced with purple/violet palette
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
 
 /* ── Variables ──────────────────────────────────────────────── */
 :root {
-  --teal:        #0bb8a8;
-  --teal-dark:   #089688;
-  --teal-light:  #e0f7f5;
-  --blue:        #1a6fa8;
-  --blue-dark:   #145b8c;
-  --blue-light:  #ddeeff;
-  --navy:        #0d2b45;
+  /* ===== CHANGED: teal → purple palette ===== */
+  --teal:        #8b5cf6;   /* was #0bb8a8 — now purple-500 */
+  --teal-dark:   #7c3aed;   /* was #089688 — now purple-600 */
+  --teal-light:  #ede9fe;   /* was #e0f7f5 — now purple-50 */
+  /* ===== CHANGED: blue → deeper indigo to complement purple ===== */
+  --blue:        #6366f1;   /* was #1a6fa8 — now indigo-500 */
+  --blue-dark:   #4f46e5;   /* was #145b8c — now indigo-600 */
+  --blue-light:  #e0e7ff;   /* was #ddeeff — now indigo-50 */
+  /* ===== unchanged neutral/semantic tokens ===== */
+  --navy:        #1e1b4b;   /* was #0d2b45 — now deep indigo for headings */
   --white:       #ffffff;
-  --off-white:   #f7fbfb;
+  --off-white:   #faf5ff;   /* was #f7fbfb — slight purple tint */
   --gray-50:     #f9fafb;
-  --gray-100:    #f0f4f4;
-  --gray-200:    #e2eaea;
-  --gray-400:    #94a8a8;
-  --gray-600:    #4a6868;
-  --gray-800:    #1f3535;
+  --gray-100:    #f0f0f4;   /* slight purple tint */
+  --gray-200:    #e4e0ee;   /* slight purple tint */
+  --gray-400:    #9b8fbf;   /* was #94a8a8 — purple-tinted gray */
+  --gray-600:    #5b5580;   /* was #4a6868 — purple-tinted gray */
+  --gray-800:    #1e1b2e;   /* was #1f3535 — deep purple gray */
   --danger:      #e53e3e;
   --success:     #38a169;
   --warning:     #d69e2e;
@@ -34,10 +39,11 @@
   --radius-lg: 20px;
   --radius-xl: 32px;
 
-  --shadow-sm: 0 1px 4px rgba(11,184,168,.10);
-  --shadow-md: 0 4px 20px rgba(11,184,168,.15);
-  --shadow-lg: 0 12px 40px rgba(11,184,168,.20);
-  --shadow-xl: 0 20px 60px rgba(11,184,168,.25);
+  /* ===== CHANGED: shadow color teal → purple ===== */
+  --shadow-sm: 0 1px 4px rgba(139,92,246,.10);   /* was teal shadow */
+  --shadow-md: 0 4px 20px rgba(139,92,246,.15);  /* was teal shadow */
+  --shadow-lg: 0 12px 40px rgba(139,92,246,.20); /* was teal shadow */
+  --shadow-xl: 0 20px 60px rgba(139,92,246,.25); /* was teal shadow */
 
   --transition: .25s cubic-bezier(.4,0,.2,1);
   --nav-h: 68px;
@@ -84,6 +90,7 @@ main { flex: 1; padding-top: var(--nav-h); }
 .nav-logo { display: inline-flex; align-items: center; gap: 10px; }
 .nav-logo__mark {
   width: 38px; height: 38px; border-radius: var(--radius-sm);
+  /* ===== CHANGED: gradient uses purple palette ===== */
   background: linear-gradient(135deg, var(--teal), var(--blue));
   display: flex; align-items: center; justify-content: center;
   color: #fff; font-size: 1.2rem; font-weight: 700; flex-shrink: 0;
@@ -96,6 +103,7 @@ main { flex: 1; padding-top: var(--nav-h); }
   font-size: .9rem; font-weight: 500; color: var(--gray-600);
   transition: var(--transition);
 }
+/* ===== CHANGED: active/hover uses purple light ===== */
 .nav-link:hover, .nav-link.active { color: var(--teal-dark); background: var(--teal-light); }
 
 /* Hamburger */
@@ -127,6 +135,7 @@ main { flex: 1; padding-top: var(--nav-h); }
   font-weight: 500; font-size: .95rem; color: var(--gray-600);
   text-align: left; transition: var(--transition);
 }
+/* ===== CHANGED: mobile active uses purple ===== */
 .mobile-link:hover, .mobile-link.active { color: var(--teal-dark); background: var(--teal-light); }
 
 /* ── Buttons ─────────────────────────────────────────────────── */
@@ -137,11 +146,13 @@ main { flex: 1; padding-top: var(--nav-h); }
   transition: var(--transition); white-space: nowrap; cursor: pointer;
   text-decoration: none;
 }
+/* ===== CHANGED: primary button gradient uses purple→indigo ===== */
 .btn--primary {
   background: linear-gradient(135deg, var(--teal), var(--blue));
   color: #fff; box-shadow: var(--shadow-md);
 }
 .btn--primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+/* ===== CHANGED: outline border/text use purple ===== */
 .btn--outline {
   background: var(--white); color: var(--teal-dark);
   border: 2px solid var(--teal);
@@ -161,6 +172,7 @@ main { flex: 1; padding-top: var(--nav-h); }
   display: inline-block; padding: 5px 16px; border-radius: 99px;
   font-size: .78rem; font-weight: 700; letter-spacing: .06em;
   text-transform: uppercase;
+  /* ===== CHANGED: pill uses purple light ===== */
   background: var(--teal-light); color: var(--teal-dark);
 }
 .pill--sm { padding: 3px 12px; font-size: .72rem; }
@@ -195,7 +207,8 @@ h4 { font-size: 1rem; }
   transition: var(--transition); outline: none;
   font-family: var(--font-body);
 }
-.form-control:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(11,184,168,.15); }
+/* ===== CHANGED: focus ring uses purple ===== */
+.form-control:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(139,92,246,.15); }
 textarea.form-control { resize: vertical; min-height: 100px; }
 .form-grid { display: grid; gap: 20px; grid-template-columns: 1fr 1fr; }
 @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
@@ -209,10 +222,12 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .alert--success { background: #e6f4ea; color: var(--success); border: 1px solid #b7dfbf; }
 .alert--danger  { background: #fce8e8; color: var(--danger);  border: 1px solid #f5c6c6; }
 .alert--warn    { background: #fff3cd; color: #856404;         border: 1px solid #ffe088; }
-.alert--info    { background: var(--teal-light); color: var(--teal-dark); border: 1px solid #9de4de; }
+/* ===== CHANGED: info alert uses purple ===== */
+.alert--info    { background: var(--teal-light); color: var(--teal-dark); border: 1px solid #c4b5fd; }
 
 /* ── Privacy Strip ───────────────────────────────────────────── */
 .privacy-strip {
+  /* ===== CHANGED: privacy strip uses purple ===== */
   background: var(--teal-light); border-left: 4px solid var(--teal);
   border-radius: var(--radius-sm); padding: 12px 16px;
   font-size: .85rem; color: var(--gray-600);
@@ -222,6 +237,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 /* ── Page Header ─────────────────────────────────────────────── */
 .page-header {
+  /* ===== CHANGED: page header gradient uses purple light ===== */
   background: linear-gradient(135deg, var(--teal-light), var(--blue-light));
   padding: 48px 0 32px;
 }
@@ -231,30 +247,34 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 /* ── Hero ────────────────────────────────────────────────────── */
 .hero {
-  background: linear-gradient(135deg, #e8f9f7 0%, #ddeeff 100%);
+  /* ===== CHANGED: hero background uses purple tones ===== */
+  background: linear-gradient(135deg, #f3e8ff 0%, #e0e7ff 100%);
   position: relative; overflow: hidden;
   padding: 72px 0 56px;
 }
 .hero__bg-circle {
   position: absolute; border-radius: 50%; pointer-events: none;
 }
+/* ===== CHANGED: decorative circles use purple radial gradients ===== */
 .hero__bg-circle--1 {
   width: 600px; height: 600px; right: -100px; top: -100px;
-  background: radial-gradient(circle, rgba(11,184,168,.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(139,92,246,.1) 0%, transparent 70%);
 }
 .hero__bg-circle--2 {
   width: 400px; height: 400px; left: -80px; bottom: -80px;
-  background: radial-gradient(circle, rgba(26,111,168,.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(99,102,241,.08) 0%, transparent 70%);
 }
 .hero__inner {
   position: relative; display: grid;
   grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
 }
+/* ===== CHANGED: eyebrow text uses purple ===== */
 .hero__eyebrow {
   font-size: .82rem; font-weight: 700; letter-spacing: .12em;
   text-transform: uppercase; color: var(--teal-dark); margin-bottom: 14px;
 }
 .hero__title { font-size: clamp(2.2rem, 5vw, 3.4rem); margin-bottom: 16px; line-height: 1.15; }
+/* ===== CHANGED: title highlight color uses purple ===== */
 .hero__title span { color: var(--teal-dark); }
 .hero__desc { color: var(--gray-600); font-size: 1.05rem; max-width: 480px; margin-bottom: 32px; }
 .hero__actions { display: flex; gap: 14px; flex-wrap: wrap; }
@@ -269,6 +289,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .hero__img-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
 .hero__img-circle {
   width: 340px; height: 340px; border-radius: 50%;
+  /* ===== CHANGED: image circle uses purple gradient ===== */
   background: linear-gradient(135deg, var(--teal-light), var(--blue-light));
   display: flex; align-items: center; justify-content: center;
   font-size: 8rem; box-shadow: var(--shadow-xl); overflow: hidden;
@@ -296,9 +317,11 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   border: 1px solid var(--gray-200); text-align: center;
   box-shadow: var(--shadow-sm); transition: var(--transition); height: 100%;
 }
+/* ===== CHANGED: service card hover border uses purple ===== */
 .service-card:hover { box-shadow: var(--shadow-md); transform: translateY(-4px); border-color: var(--teal); }
 .service-card__icon {
   width: 64px; height: 64px; border-radius: var(--radius-md);
+  /* ===== CHANGED: icon bg uses purple gradient ===== */
   background: linear-gradient(135deg, var(--teal-light), var(--blue-light));
   margin: 0 auto 16px; display: flex; align-items: center;
   justify-content: center; font-size: 2rem;
@@ -308,6 +331,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 /* ── CTA Banner ──────────────────────────────────────────────── */
 .cta-banner {
+  /* ===== CHANGED: CTA banner uses purple→indigo gradient ===== */
   background: linear-gradient(135deg, var(--teal), var(--blue));
   color: #fff; padding: 64px 0; text-align: center;
 }
@@ -325,6 +349,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .testimonial-card__stars { font-size: 1rem; color: #ffc107; margin-bottom: 12px; }
 .testimonial-card__quote { font-size: .95rem; color: var(--gray-600); margin-bottom: 16px; line-height: 1.6; }
 .testimonial-card__author { display: flex; align-items: center; gap: 12px; }
+/* ===== CHANGED: avatar bg uses purple light ===== */
 .testimonial-card__avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--teal-light); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
 .testimonial-card__name { font-weight: 600; font-size: .9rem; color: var(--navy); }
 .testimonial-card__since { font-size: .8rem; color: var(--gray-400); }
@@ -347,11 +372,13 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   font-weight: 700; font-size: 1.1rem; margin-bottom: 8px;
   transition: var(--transition);
 }
+/* ===== CHANGED: active step circle uses purple gradient ===== */
 .step-indicator__step.active .step-indicator__num { background: linear-gradient(135deg, var(--teal), var(--blue)); color: #fff; }
 .step-indicator__line {
   width: 60px; height: 2px; background: var(--gray-200);
   transition: var(--transition); flex-shrink: 0;
 }
+/* ===== CHANGED: completed step line uses purple ===== */
 .step-indicator__step.active ~ .step-indicator__line { background: var(--teal); }
 
 .booking-form { margin-bottom: 24px; }
@@ -400,11 +427,13 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .doctor-card { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
 .doctor-card__photo {
   width: 200px; height: 240px; border-radius: var(--radius-lg);
+  /* ===== CHANGED: doctor photo placeholder uses purple gradient ===== */
   background: linear-gradient(135deg, var(--teal-light), var(--blue-light));
   display: flex; align-items: center; justify-content: center;
   font-size: 5rem; box-shadow: var(--shadow-md);
 }
 .doctor-card__info h2 { margin-bottom: 8px; }
+/* ===== CHANGED: speciality text uses purple ===== */
 .doctor-card__spec { font-size: .95rem; color: var(--teal-dark); font-weight: 600; margin-bottom: 16px; }
 .doctor-card__bio { color: var(--gray-600); line-height: 1.7; margin-bottom: 20px; }
 .doctor-card__tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
@@ -421,9 +450,11 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   transition: var(--transition);
 }
 .timing-card:hover { box-shadow: var(--shadow-md); }
+/* ===== CHANGED: today card uses purple border/bg ===== */
 .timing-card--today { border: 2px solid var(--teal); background: var(--teal-light); }
 .timing-card--sunday { opacity: .6; }
 .timing-card__day { font-weight: 700; color: var(--navy); margin-bottom: 8px; font-size: .95rem; position: relative; }
+/* ===== CHANGED: today badge uses purple ===== */
 .today-badge { display: inline-block; background: var(--teal); color: #fff; font-size: .65rem; padding: 2px 8px; border-radius: 99px; margin-left: 4px; }
 .timing-card__hours { font-size: .85rem; color: var(--gray-600); }
 .timing-card__hours--closed { color: var(--danger); font-weight: 600; }
@@ -438,6 +469,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   border-radius: var(--radius-md); font-weight: 600; color: var(--navy);
   transition: var(--transition); text-align: left; cursor: pointer;
 }
+/* ===== CHANGED: FAQ hover/open states use purple ===== */
 .faq-item__q:hover { background: var(--teal-light); }
 .faq-item__q.open { background: linear-gradient(135deg, var(--teal-light), var(--blue-light)); }
 .faq-item__icon {
@@ -452,6 +484,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 
 .faq-cta {
   text-align: center; margin-top: 48px; padding: 36px;
+  /* ===== CHANGED: FAQ CTA section uses purple light ===== */
   background: var(--teal-light); border-radius: var(--radius-lg);
 }
 .faq-cta h3 { font-family: var(--font-body); font-weight: 700; margin: 12px 0 8px; }
@@ -483,16 +516,19 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 /* ── Rating Summary ──────────────────────────────────────────── */
 .rating-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
 .rating-summary__score { text-align: center; }
+/* ===== CHANGED: rating number color uses purple ===== */
 .rating-summary__num { font-size: 3.5rem; font-family: var(--font-display); color: var(--teal-dark); line-height: 1; margin-bottom: 8px; }
 .rating-summary__stars { font-size: 1.4rem; color: #ffc107; margin-bottom: 8px; }
 .rating-summary__count { font-size: .85rem; color: var(--gray-600); }
 .rating-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .rating-bar__label { font-size: .8rem; font-weight: 600; min-width: 40px; }
 .rating-bar__track { flex: 1; height: 8px; background: var(--gray-200); border-radius: 4px; overflow: hidden; }
+/* ===== CHANGED: rating bar fill uses purple→indigo gradient ===== */
 .rating-bar__fill { height: 100%; background: linear-gradient(90deg, var(--teal), var(--blue)); }
 .rating-bar__count { font-size: .8rem; color: var(--gray-600); min-width: 30px; text-align: right; }
 
 /* ── Dashboard Page ──────────────────────────────────────────── */
+/* ===== CHANGED: dashboard header uses purple→indigo gradient ===== */
 .dash-header { background: linear-gradient(135deg, var(--teal), var(--blue)); padding: 36px 0; }
 .dash-header__inner { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; }
 .avail-badge { display: flex; align-items: center; gap: 10px; font-size: .9rem; font-weight: 700; color: #fff; }
@@ -528,6 +564,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   width: 22px; height: 22px; border-radius: 50%; background: #fff;
   transition: var(--transition); box-shadow: 0 1px 4px rgba(0,0,0,.2);
 }
+/* ===== CHANGED: toggle active state uses purple ===== */
 .toggle-switch input:checked + .toggle-track { background: var(--teal); }
 .toggle-switch input:checked + .toggle-track::after { left: calc(100% - 25px); }
 .toggle-label { font-weight: 600; font-size: .9rem; color: var(--gray-800); }
@@ -538,6 +575,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   padding: 7px 16px; border-radius: var(--radius-sm); font-size: .85rem; font-weight: 600;
   color: var(--gray-600); transition: var(--transition);
 }
+/* ===== CHANGED: active tab uses purple ===== */
 .tab.active, .tab:hover { background: var(--teal-light); color: var(--teal-dark); }
 
 /* Status pills */
@@ -559,6 +597,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .visit-type-pill--walk-in { background: #fce8e8; color: #c53030; }
 
 /* Token Badge */
+/* ===== CHANGED: token badge uses purple gradient ===== */
 .token-badge {
   display: inline-block; padding: 4px 12px; border-radius: 99px;
   background: linear-gradient(135deg, var(--teal), var(--blue));
@@ -568,6 +607,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 /* Table */
 .table-wrap { overflow-x: auto; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
 table { width: 100%; border-collapse: collapse; background: #fff; min-width: 600px; }
+/* ===== CHANGED: table header uses purple gradient ===== */
 thead { background: linear-gradient(135deg, var(--teal), var(--blue)); color: #fff; }
 th, td { padding: 12px 16px; text-align: left; font-size: .87rem; }
 th { font-weight: 600; letter-spacing: .04em; font-size: .82rem; }
@@ -589,6 +629,7 @@ tbody tr:hover { background: var(--off-white); }
 .footer__bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.1); font-size: .85rem; opacity: .7; }
 
 /* ── Scroll to Top ───────────────────────────────────────────── */
+/* ===== CHANGED: scroll-to-top button uses purple gradient ===== */
 .scroll-to-top {
   position: fixed; bottom: 24px; right: 24px; z-index: 150;
   width: 44px; height: 44px; border-radius: 50%;
