@@ -67,7 +67,28 @@ export default function PageHome({ setPage }) {
 
           {/* Floating doctor illustration + availability badge */}
           <div className="hero__img-wrap">
-            <div className="hero__img-circle">🧑‍⚕️</div>
+            {/* // CHANGE: Replaced 🧑‍⚕️ emoji with styled initials avatar
+// hero__img-circle now shows "SK" with a stethoscope symbol below
+// When client provides photo, replace this div with <img className="hero__img-circle" src="..." /> */}
+            <div className="hero__img-circle" style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 4,
+            }}>
+              <span style={{
+                fontSize: "2.8rem",
+                fontWeight: 800,
+                color: "#fff",
+                letterSpacing: 2,
+                lineHeight: 1,
+              }}>SK</span>
+              <span style={{
+                fontSize: "1.4rem",
+                opacity: 0.85,
+              }}>⚕</span>
+            </div>
             <div className={`hero__badge${!available ? " hero__badge--closed" : ""}`}>
               {/* Green dot when open, red when closed */}
               <span className={`badge-dot${!available ? " badge-dot--red" : ""}`} />

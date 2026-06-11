@@ -1,29 +1,60 @@
 // ─── Page: Doctor ─────────────────────────────────────────────
-// Displays the doctor's profile photo, bio, qualifications,
-// specialty tags, and a weekly consultation hours grid.
-// "Today" card is highlighted with the purple border (App.css).
+// CHANGED: Replaced all [placeholder] brackets with real dummy
+// content for a Tamil Nadu-based doctor. When a real doctor
+// orders the product, replace the values in the DOCTOR object
+// at the top — no need to touch the JSX below.
 
 import FadeUp from "../components/FadeUp";
 
-export default function PageDoctor({ setPage }) {
-  const qualifications = [
-    { icon: "🎓", title: "MBBS – Bachelor of Medicine & Surgery", sub: "[Medical College Name], [University], [Year of Graduation]" },
-    { icon: "🏆", title: "MD – General Medicine", sub: "[Postgraduate Institute], [University], [Year]" },
-    { icon: "🏥", title: "Senior Resident – [Hospital Name]", sub: "3 years of residency in General Medicine · [City]" },
-    { icon: "📋", title: "Registered with Tamil Nadu Medical Council", sub: "Registration No: [TNMC-XXXX] · Valid & Active" },
-    { icon: "⭐", title: "15+ Years Clinical Practice", sub: "Over 5,000 patients treated across Chennai." },
-  ];
+// ── CHANGE HERE when client orders ────────────────────────────
+const DOCTOR = {
+  name: "Dr. Suresh Kumar R.",
+  initials: "SK",
+  qualification: "MBBS, MD – General Medicine & Family Health",
+  bio: "Dr. Suresh Kumar is a dedicated physician with over 15 years of experience in general medicine and family healthcare across Chennai. Known for a patient-first approach, he combines clinical expertise with genuine warmth — ensuring every patient feels heard, respected, and well cared for.",
+  tags: ["General Medicine", "Family Health", "Chronic Disease", "Pediatrics", "Preventive Care"],
+  qualifications: [
+    {
+      icon: "🎓",
+      title: "MBBS – Bachelor of Medicine & Surgery",
+      sub: "Madras Medical College, The Tamil Nadu Dr. MGR Medical University, 2005",
+    },
+    {
+      icon: "🏆",
+      title: "MD – General Medicine",
+      sub: "Stanley Medical College, Chennai, 2009",
+    },
+    {
+      icon: "🏥",
+      title: "Senior Resident – Government General Hospital",
+      sub: "3 years of residency in General Medicine · Chennai",
+    },
+    {
+      icon: "📋",
+      title: "Registered with Tamil Nadu Medical Council",
+      sub: "Registration No: TNMC-45231 · Valid & Active",
+    },
+    {
+      icon: "⭐",
+      title: "15+ Years Clinical Practice",
+      sub: "Over 5,000 patients treated across Anna Nagar, Chennai.",
+    },
+  ],
+};
+// ──────────────────────────────────────────────────────────────
 
-  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  const hours = {
-    Monday: "9:00 AM – 7:00 PM",
-    Tuesday: "9:00 AM – 7:00 PM",
-    Wednesday: "9:00 AM – 7:00 PM",
-    Thursday: "9:00 AM – 7:00 PM",
-    Friday: "9:00 AM – 7:00 PM",
-    Saturday: "9:00 AM – 2:00 PM",
-    Sunday: "Emergency Only",
-  };
+const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const hours = {
+  Monday: "9:00 AM – 7:00 PM",
+  Tuesday: "9:00 AM – 7:00 PM",
+  Wednesday: "9:00 AM – 7:00 PM",
+  Thursday: "9:00 AM – 7:00 PM",
+  Friday: "9:00 AM – 7:00 PM",
+  Saturday: "9:00 AM – 2:00 PM",
+  Sunday: "Emergency Only",
+};
+
+export default function PageDoctor({ setPage }) {
   const today = new Date().toLocaleDateString("en-IN", { weekday: "long" });
 
   return (
@@ -31,7 +62,7 @@ export default function PageDoctor({ setPage }) {
       {/* Page header — purple gradient bg from App.css .page-header */}
       <div className="page-header">
         <div className="container">
-          <span className="pill">Meet the Team</span>
+          <span className="pill">Meet the Doctor</span>
           <h1>Our Doctor</h1>
           <p>Compassionate care backed by expertise and experience.</p>
         </div>
@@ -42,21 +73,29 @@ export default function PageDoctor({ setPage }) {
         <div className="container">
           <FadeUp>
             <div className="doctor-card">
-              {/* Photo placeholder — purple gradient bg */}
-              <div className="doctor-card__photo">🧑‍⚕️</div>
+              {/* CHANGE: Replaced emoji with styled initials avatar */}
+              {/* When client provides a photo, replace this div with <img> */}
+              <div className="doctor-card__photo" style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "2.4rem",
+                fontWeight: 700,
+                color: "#fff",
+                letterSpacing: 1,
+                userSelect: "none",
+              }}>
+                {DOCTOR.initials}
+              </div>
+
               <div className="doctor-card__info">
-                <h2>Dr. [Doctor's Full Name]</h2>
-                {/* Specialty text uses --teal-dark (purple) from App.css */}
-                <p className="doctor-card__spec">MBBS, MD – General Medicine & Family Health</p>
-                <p className="doctor-card__bio">
-                  Dr. [Name] is a dedicated physician with over 15 years of experience in general
-                  medicine and family healthcare. Known for a patient-first approach, they combine
-                  clinical expertise with genuine warmth to ensure every patient feels heard,
-                  respected, and well-cared for.
-                </p>
-                {/* Specialty tags — purple pill style */}
+                {/* CHANGE: Real doctor name */}
+                <h2>{DOCTOR.name}</h2>
+                <p className="doctor-card__spec">{DOCTOR.qualification}</p>
+                {/* CHANGE: Real bio */}
+                <p className="doctor-card__bio">{DOCTOR.bio}</p>
                 <div className="doctor-card__tags">
-                  {["General Medicine", "Family Health", "Chronic Disease", "Pediatrics", "Preventive Care"].map(t => (
+                  {DOCTOR.tags.map(t => (
                     <span key={t} className="pill pill--sm">{t}</span>
                   ))}
                 </div>
@@ -78,9 +117,12 @@ export default function PageDoctor({ setPage }) {
         <div className="container" style={{ maxWidth: 800 }}>
           <FadeUp>
             <h2 style={{ marginBottom: 8 }}>Qualifications & Experience</h2>
-            <p style={{ color: "var(--gray-600)", marginBottom: 28 }}>Academic training and professional background.</p>
+            <p style={{ color: "var(--gray-600)", marginBottom: 28 }}>
+              Academic training and professional background.
+            </p>
             <div className="card" style={{ padding: 24 }}>
-              {qualifications.map((q, i) => (
+              {/* CHANGE: All real qualification entries */}
+              {DOCTOR.qualifications.map((q, i) => (
                 <div key={i} className="qual-item">
                   <div className="qual-item__icon">{q.icon}</div>
                   <div>
@@ -99,14 +141,15 @@ export default function PageDoctor({ setPage }) {
         <div className="container" style={{ maxWidth: 800 }}>
           <FadeUp>
             <h2 style={{ marginBottom: 8 }}>Consultation Hours</h2>
-            <p style={{ color: "var(--gray-600)", marginBottom: 24 }}>Walk-ins welcome; booking recommended.</p>
+            <p style={{ color: "var(--gray-600)", marginBottom: 24 }}>
+              Walk-ins welcome; booking recommended.
+            </p>
             <div className="timing-grid">
               {days.map(d => (
                 <div
                   key={d}
                   className={`timing-card${d === today ? " timing-card--today" : ""}${d === "Sunday" ? " timing-card--sunday" : ""}`}
                 >
-                  {/* Today badge — purple bg from App.css .today-badge */}
                   <div className="timing-card__day">
                     {d}{d === today && <span className="today-badge">Today</span>}
                   </div>
