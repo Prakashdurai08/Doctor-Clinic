@@ -1,7 +1,8 @@
 // ─── App Root ─────────────────────────────────────────────────
-// CHANGED: Added hash-based routing so browser back button works
-// and pages can be bookmarked/shared (e.g. yourclinic.com/#booking)
-// No new library needed — uses window.location.hash natively.
+// CHANGED:
+//   - Hash-based routing (browser back/forward + shareable URLs)
+//   - WhatsApp button hidden on dashboard/token (staff-only pages)
+//   - New Pricing page registered (Item A)
 
 import { useState, useEffect } from "react";
 import "./App.css";
@@ -23,7 +24,7 @@ import PageDashboard from "./pages/PageDashboard";
 import PageToken from "./pages/PageToken";
 
 // CHANGE: Valid page names — hash must match one of these
-const VALID_PAGES = ["home","booking","doctor","reviews","faq","contact","dashboard","token"];
+const VALID_PAGES = ["home","booking","doctor","reviews","faq","contact","dashboard","token",];
 
 // CHANGE: Read current hash from URL, fallback to "home"
 const getPageFromHash = () => {

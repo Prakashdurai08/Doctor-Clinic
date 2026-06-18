@@ -163,6 +163,10 @@ function PageDashboardContent() {
   const [showHistory, setShowHistory]       = useState(false);
   const [clock, setClock]                   = useState(new Date());
   const prevCountRef                        = useRef(null);
+  // CHANGE: Ref for the All Bookings table — used to scroll precisely to it
+  const bookingsTableRef                    = useRef(null);
+  // CHANGE: Brief highlight flash when "View All" is clicked
+  const [highlightTable, setHighlightTable] = useState(false);
   const currentUser                         = auth.currentUser;
 
   useEffect(() => {
@@ -458,7 +462,20 @@ function PageDashboardContent() {
               </div>
             </div>
             <button className="btn btn--sm" style={{ background:"#7e22ce",color:"#fff",border:"none" }}
-              onClick={()=>{ setActiveTab("pending"); setSearch(""); setShowHistory(false); window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"}); }}>
+              onClick={()=>{
+                // CHANGE: Switch to Pending tab, clear filters, then scroll
+                // directly to the All Bookings table (not page bottom) and
+                // briefly highlight it so the doctor's eye is drawn to the
+                // individual future-pending rows.
+                setActiveTab("pending");
+                setSearch("");
+                setShowHistory(false);
+                setHighlightTable(true);
+                setTimeout(() => {
+                  bookingsTableRef.current?.scrollIntoView({ behavior:"smooth", block:"start" });
+                }, 50);
+                setTimeout(() => setHighlightTable(false), 1800);
+              }}>
               View All →
             </button>
           </div>
@@ -652,8 +669,18 @@ function PageDashboardContent() {
       </div>
 
       {/* ── All Bookings Table ────────────────────────────────── */}
+      {/* CHANGE: ref attached here so "View All" scrolls precisely to
+          this section, and highlightTable adds a brief glow effect */}
       <div className="container" style={{ marginBottom:40 }}>
-        <div className="dash-card">
+        <div
+          ref={bookingsTableRef}
+          className="dash-card"
+          style={{
+            transition: "box-shadow .3s ease, border-color .3s ease",
+            boxShadow: highlightTable ? "0 0 0 3px var(--teal-light), var(--shadow-lg)" : undefined,
+            borderColor: highlightTable ? "var(--teal)" : undefined,
+          }}
+        >
           <div className="dash-card__head">
             <h3 className="dash-card__title">📋 {showHistory?"Last 30 Days — All Bookings":"All Bookings"}</h3>
             <input className="form-control" style={{ maxWidth:240 }} placeholder="Search by name or phone…" value={search} onChange={e=>setSearch(e.target.value)}/>

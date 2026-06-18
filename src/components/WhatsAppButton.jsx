@@ -1,5 +1,8 @@
 // ─── WhatsApp Floating Button ─────────────────────────────────
 // Fixed bottom-RIGHT bubble, slightly above the mobile nav bar.
+// CHANGE: When the mobile "More" drawer is open (body.drawer-open,
+// set by MobileNav.jsx), the button slides UP near the top of the
+// screen instead of overlapping the drawer's bottom rows.
 
 import { CLINIC } from "../utils/constants";
 
@@ -27,9 +30,13 @@ export default function WhatsAppButton() {
           box-shadow: 0 4px 20px rgba(37,211,102,.45);
           animation: waPulse 2.5s ease-in-out infinite;
           text-decoration: none;
-          transition: transform .2s ease;
+          transition: bottom .25s ease, transform .2s ease;
         }
-        /* On desktop (no bottom nav) — sit lower */
+    /* CHANGE: Hide WhatsApp button completely while the More drawer is open */
+body.drawer-open .wa-btn {
+  display: none;
+}
+        /* On desktop (no bottom nav, no drawer) — sit lower, never moves */
         @media (min-width: 769px) {
           .wa-btn {
             bottom: 28px;

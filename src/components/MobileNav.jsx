@@ -16,38 +16,38 @@ export default function MobileNav({ page, setPage }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // CHANGE: Toggle body class so WhatsApp button can reposition
+  // when the More drawer is open (see WhatsAppButton.jsx)
   useEffect(() => {
     if (drawerOpen) {
       document.body.classList.add("drawer-open");
-
       const close = () => setDrawerOpen(false);
       window.addEventListener("hashchange", close);
-
       return () => {
         document.body.classList.remove("drawer-open");
         window.removeEventListener("hashchange", close);
       };
+    } else {
+      document.body.classList.remove("drawer-open");
     }
-
-    document.body.classList.remove("drawer-open");
   }, [drawerOpen]);
 
   const drawerItems = [
-    { id: "token", icon: "🔢", label: "Token Board", desc: "Live queue for waiting room", badge: null },
-    { id: "dashboard", icon: "🔒", label: "Staff Dashboard", desc: "Doctor & staff access", badge: "Staff only" },
-    { id: "reviews", icon: "⭐", label: "Reviews", desc: "Patient feedback & ratings", badge: null },
-    { id: "faq", icon: "❓", label: "FAQ", desc: "Frequently asked questions", badge: null },
+    { id: "token",     icon: "🔢", label: "Token Board",    desc: "Live queue for waiting room",   badge: null },
+    { id: "dashboard", icon: "🔒", label: "Staff Dashboard", desc: "Doctor & staff access",          badge: "Staff only" },
+    { id: "reviews",   icon: "⭐", label: "Reviews",         desc: "Patient feedback & ratings",    badge: null },
+    { id: "faq",       icon: "❓", label: "FAQ",             desc: "Frequently asked questions",   badge: null },
   ];
 
-  const isMoreActive = ["token", "dashboard", "reviews", "faq"].includes(page);
+  const isMoreActive = ["token","dashboard","reviews","faq","pricing"].includes(page);
 
   // Tab config — Book has special style, More opens drawer
   const tabs = [
-    { id: "home", icon: "🏠", label: "Home" },
-    { id: "booking", icon: "📅", label: "Book", isCTA: true },
-    { id: "doctor", icon: "🧑‍⚕️", label: "Doctor" },
+    { id: "home",    icon: "🏠", label: "Home" },
+    { id: "booking", icon: "📅", label: "Book",  isCTA: true },
+    { id: "doctor",  icon: "🧑‍⚕️", label: "Doctor" },
     { id: "contact", icon: "📞", label: "Contact" },
-    { id: "more", icon: null, label: "More", isMore: true },
+    { id: "more",    icon: null,  label: "More",  isMore: true },
   ];
 
   return (
@@ -129,7 +129,7 @@ export default function MobileNav({ page, setPage }) {
                     transform: "translateX(-50%)",
                     width: 20, height: 3, borderRadius: 2,
                     background: "linear-gradient(90deg,var(--teal),var(--blue))",
-                  }} />
+                  }}/>
                 )}
                 {/* Grid dots icon for "More" */}
                 <svg
@@ -138,15 +138,15 @@ export default function MobileNav({ page, setPage }) {
                   strokeWidth="2" strokeLinecap="round"
                   style={{ marginTop: 6 }}
                 >
-                  <circle cx="5" cy="5" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"} />
-                  <circle cx="12" cy="5" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"} />
-                  <circle cx="19" cy="5" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"} />
-                  <circle cx="5" cy="12" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"} />
-                  <circle cx="12" cy="12" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"} />
-                  <circle cx="19" cy="12" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"} />
-                  <circle cx="5" cy="19" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"} />
-                  <circle cx="12" cy="19" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"} />
-                  <circle cx="19" cy="19" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"} />
+                  <circle cx="5"  cy="5"  r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"}/>
+                  <circle cx="12" cy="5"  r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"}/>
+                  <circle cx="19" cy="5"  r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"}/>
+                  <circle cx="5"  cy="12" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"}/>
+                  <circle cx="12" cy="12" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"}/>
+                  <circle cx="19" cy="12" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"}/>
+                  <circle cx="5"  cy="19" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"}/>
+                  <circle cx="12" cy="19" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"}/>
+                  <circle cx="19" cy="19" r="1.5" fill={(drawerOpen || isMoreActive) ? "var(--teal-dark)" : "var(--gray-400)"}/>
                 </svg>
                 <span style={{
                   fontSize: ".65rem",
@@ -184,7 +184,7 @@ export default function MobileNav({ page, setPage }) {
                   transform: "translateX(-50%)",
                   width: 20, height: 3, borderRadius: 2,
                   background: "linear-gradient(90deg,var(--teal),var(--blue))",
-                }} />
+                }}/>
               )}
               <span style={{
                 fontSize: "1.3rem", lineHeight: 1, marginTop: 6,
@@ -233,7 +233,7 @@ export default function MobileNav({ page, setPage }) {
               width: 40, height: 4, borderRadius: 2,
               background: "#e2e8f0",
               margin: "12px auto 0",
-            }} />
+            }}/>
 
             {/* Sheet header */}
             <div style={{
@@ -340,7 +340,7 @@ export default function MobileNav({ page, setPage }) {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                         stroke={isActive ? "var(--teal)" : "#cbd5e1"}
                         strokeWidth="2.5" strokeLinecap="round">
-                        <path d="M9 18l6-6-6-6" />
+                        <path d="M9 18l6-6-6-6"/>
                       </svg>
                     )}
                   </button>
@@ -351,7 +351,7 @@ export default function MobileNav({ page, setPage }) {
         </>
       )}
 
-      <div className="mobile-bottom-nav-spacer" />
+      <div className="mobile-bottom-nav-spacer"/>
 
       <style>{`
         @keyframes slideUp {

@@ -1,11 +1,19 @@
 // ─── Footer Component ─────────────────────────────────────────
 // Site-wide footer with brand info, quick links, clinic hours,
 // and a privacy note. Uses the navy background from CSS variables.
+// CHANGED (Item C):
+//   - "Trusted by clinics across Tamil Nadu" + city pills
+//   - TNMC Registered badge using sky-blue accent color
+//   - Pricing link added to Information column
+//   - "Built by [Name]" credit line at bottom — placeholder for now
 
 import { CLINIC } from "../utils/constants";
 
 export default function Footer({ setPage }) {
   const go = (p) => { setPage(p); window.scrollTo({ top: 0 }); };
+
+  // CHANGE: Tamil Nadu cities — signals regional focus to clinic owners
+  const cities = ["Chennai", "Coimbatore", "Madurai", "Trichy", "Salem"];
 
   return (
     <footer className="footer">
@@ -23,12 +31,33 @@ export default function Footer({ setPage }) {
             <p style={{ marginTop: 6, fontSize: ".85rem" }}>
               📞 <a href={`tel:${CLINIC.phone}`} style={{ color: "var(--teal)" }}>{CLINIC.phone}</a>
             </p>
-            {/* Privacy note uses purple left-border strip */}
-            <div className="privacy-strip" style={{ marginTop: 16 }}>
+
+            {/* ── CHANGE: TNMC Registered badge — sky blue accent ───── */}
+            <div
+              className="privacy-strip privacy-strip--sky"
+              style={{ marginTop: 16, marginBottom: 0 }}
+            >
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M9 12l2 2 4-4M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
+              </svg>
+              TNMC Registered Clinic · Reg. No. TNMC-45231
+            </div>
+
+            <div className="privacy-strip" style={{ marginTop: 12 }}>
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
               Your data is securely stored in the cloud and shared via WhatsApp/email when you choose.
+            </div>
+
+            {/* ── CHANGE: Tamil Nadu city pills (Item C) ──────────── */}
+            <p style={{ fontSize: ".82rem", opacity: .8, marginTop: 18, marginBottom: 0 }}>
+              Trusted by clinics across Tamil Nadu
+            </p>
+            <div className="footer__cities">
+              {cities.map(c => (
+                <span key={c} className="footer__city-pill">{c}</span>
+              ))}
             </div>
           </div>
 
@@ -66,9 +95,19 @@ export default function Footer({ setPage }) {
           </div>
         </div>
 
-        <div className="footer__bottom">
-          <span>© 2025 MediCare Clinic. All rights reserved.</span>
-          <span>Built with ❤️ for better healthcare.</span>
+        <div className="footer__bottom" style={{ flexDirection: "column", gap: 4, alignItems: "center", textAlign: "center" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", width: "100%", flexWrap: "wrap", gap: 8 }}>
+            <span>© 2026 MediCare Clinic. All rights reserved.</span>
+            <span>Built with ❤️ for better healthcare.</span>
+          </div>
+          {/* ── CHANGE: "Built by" credit — add your name + portfolio link here ── */}
+          <p className="footer__credit">
+            Website design &amp; development by{" "}
+            <a href="#" target="_blank" rel="noreferrer">
+              {/* CHANGE HERE: replace "#" with your portfolio URL and add your name */}
+              [Your Name] — Freelance Web Developer
+            </a>
+          </p>
         </div>
       </div>
     </footer>

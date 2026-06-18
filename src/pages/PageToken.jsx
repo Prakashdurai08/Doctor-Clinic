@@ -1,5 +1,7 @@
 // ─── Page: Token Display ───────────────────────────────────────
 // Public live queue board. No login needed. Auto-refreshes every 20s.
+// CHANGED (Item E): Added "TV Mode" — fullscreen "Now Serving" display
+// for waiting-room TVs. Uses .tv-mode-overlay styles from App.css.
 
 import { useState, useEffect } from "react";
 import { LS } from "../utils/constants";
@@ -8,6 +10,8 @@ export default function PageToken() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [lastSync, setLastSync] = useState(null);
+  // CHANGE: TV mode state
+  const [tvMode, setTvMode]     = useState(false);
 
   const refresh = async () => {
     const data = await LS.fetchBookings();
@@ -22,6 +26,14 @@ export default function PageToken() {
     return () => clearInterval(id);
   }, []);
 
+  // CHANGE: Exit TV mode on Escape key
+  useEffect(() => {
+    if (!tvMode) return;
+    const onKey = (e) => { if (e.key === "Escape") setTvMode(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [tvMode]);
+
   const todayStr   = new Date().toISOString().slice(0,10);
   const todayQueue = bookings
     .filter(b => b.arrived && b.checkedInAt?.slice(0,10)===todayStr)
@@ -30,10 +42,39 @@ export default function PageToken() {
   const waiting    = todayQueue.filter(b => b.status!=="Completed" && b.status!=="Cancelled");
   const currentToken = waiting[0]?.token ?? null;
   const nextToken    = waiting[1]?.token ?? null;
+  const currentName  = waiting[0]?.name ?? null;
   const getWait = (token) => {
     const pos = waiting.findIndex(b => b.token===token);
     return pos < 0 ? null : pos * 15;
   };
+
+  // ── CHANGE: TV Mode fullscreen overlay ─────────────────────────
+  if (tvMode) {
+    return (
+      <div className="tv-mode-overlay">
+        <button className="tv-mode-overlay__exit" onClick={() => setTvMode(false)}>
+          ✕ Exit TV Mode (Esc)
+        </button>
+        <div className="tv-mode-overlay__label">🔔 Now Serving</div>
+        {currentToken ? (
+          <>
+            <div className="tv-mode-overlay__token">#{currentToken}</div>
+            {currentName && <div className="tv-mode-overlay__name">{currentName.split(" ")[0]}</div>}
+            {nextToken && (
+              <div className="tv-mode-overlay__sub">Next up: #{nextToken}</div>
+            )}
+          </>
+        ) : (
+          <div className="tv-mode-overlay__name">No patients in queue</div>
+        )}
+        <div className="tv-mode-overlay__sub" style={{ marginTop: 32 }}>
+          {new Date().toLocaleDateString("en-IN",{weekday:"long",month:"long",day:"numeric"})}
+          {" · "}
+          {new Date().toLocaleTimeString("en-IN",{timeStyle:"short"})}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-wrapper" style={{ minHeight:"80vh" }}>
@@ -43,6 +84,13 @@ export default function PageToken() {
           <h1 style={{ color:"#fff", marginTop:10 }}>Today's Token Status</h1>
           <p style={{ opacity:.8 }}>{new Date().toLocaleDateString("en-IN",{weekday:"long",month:"long",day:"numeric"})}</p>
           {lastSync && <p style={{ opacity:.6, fontSize:".8rem", marginTop:4 }}>Auto-refreshes every 20s · Last: {lastSync.toLocaleTimeString("en-IN",{timeStyle:"short"})}</p>}
+
+          {/* ── CHANGE: TV Mode button ───────────────────────── */}
+          <div style={{ marginTop: 16 }}>
+            <button className="tv-mode-btn" onClick={() => setTvMode(true)}>
+              📺 TV Mode
+            </button>
+          </div>
         </div>
       </div>
 

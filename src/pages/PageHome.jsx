@@ -65,30 +65,19 @@ export default function PageHome({ setPage }) {
             </div>
           </div>
 
-          {/* Floating doctor illustration + availability badge */}
+          {/* Doctor photo + availability badge */}
           <div className="hero__img-wrap">
-            {/* // CHANGE: Replaced 🧑‍⚕️ emoji with styled initials avatar
-// hero__img-circle now shows "SK" with a stethoscope symbol below
-// When client provides photo, replace this div with <img className="hero__img-circle" src="..." /> */}
-            <div className="hero__img-circle" style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 4,
-            }}>
-              <span style={{
-                fontSize: "2.8rem",
-                fontWeight: 800,
-                color: "#fff",
-                letterSpacing: 2,
-                lineHeight: 1,
-              }}>SK</span>
-              <span style={{
-                fontSize: "1.4rem",
-                opacity: 0.85,
-              }}>⚕</span>
-            </div>
+            {/* CHANGE: Replaced "SK" initials placeholder with a real
+                doctor photo. Currently using a free Unsplash stock photo
+                as a placeholder — swap the `src` below with the real
+                doctor's photo (recommended: square photo, 500x500px+,
+                placed in src/assets/ and imported) when the client orders. */}
+            <img
+              className="hero__img-circle"
+              src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=500&h=500&fit=crop&crop=faces&q=80"
+              alt="Dr. Suresh Kumar — MediCare Clinic"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
             <div className={`hero__badge${!available ? " hero__badge--closed" : ""}`}>
               {/* Green dot when open, red when closed */}
               <span className={`badge-dot${!available ? " badge-dot--red" : ""}`} />

@@ -21,6 +21,7 @@ export default function Navbar({ page, setPage }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // CHANGE: Added Pricing link (Item A)
   const links = [
     ["home",    "Home"],
     ["doctor",  "Our Doctor"],

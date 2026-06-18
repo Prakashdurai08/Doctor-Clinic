@@ -9,7 +9,6 @@ import FadeUp from "../components/FadeUp";
 // ── CHANGE HERE when client orders ────────────────────────────
 const DOCTOR = {
   name: "Dr. Suresh Kumar R.",
-  initials: "SK",
   qualification: "MBBS, MD – General Medicine & Family Health",
   bio: "Dr. Suresh Kumar is a dedicated physician with over 15 years of experience in general medicine and family healthcare across Chennai. Known for a patient-first approach, he combines clinical expertise with genuine warmth — ensuring every patient feels heard, respected, and well cared for.",
   tags: ["General Medicine", "Family Health", "Chronic Disease", "Pediatrics", "Preventive Care"],
@@ -75,18 +74,17 @@ export default function PageDoctor({ setPage }) {
             <div className="doctor-card">
               {/* CHANGE: Replaced emoji with styled initials avatar */}
               {/* When client provides a photo, replace this div with <img> */}
-              <div className="doctor-card__photo" style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "2.4rem",
-                fontWeight: 700,
-                color: "#fff",
-                letterSpacing: 1,
-                userSelect: "none",
-              }}>
-                {DOCTOR.initials}
-              </div>
+              {/* CHANGE: Replaced "SK" initials placeholder with a real
+                  doctor photo. Same Unsplash placeholder as the hero —
+                  swap `src` with the real doctor's photo when the
+                  client orders (recommended: 400x480px portrait,
+                  placed in src/assets/ and imported). */}
+              <img
+                className="doctor-card__photo"
+                src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=400&h=480&fit=crop&crop=faces&q=80"
+                alt={DOCTOR.name}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
 
               <div className="doctor-card__info">
                 {/* CHANGE: Real doctor name */}
