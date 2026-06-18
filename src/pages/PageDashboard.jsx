@@ -145,6 +145,284 @@ function DashboardGate({ children }) {
 }
 
 // ── PageDashboard ─────────────────────────────────────────────
+// ── DoctorView ────────────────────────────────────────────────
+function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, markArrived, todayStr, clock }) {
+
+  const todaySchedule = bookings
+    .filter(b => b.datetime?.slice(0,10) === todayStr && b.visitType !== "Walk-In")
+    .sort((a,b) => (a.datetime||"").localeCompare(b.datetime||""));
+
+  const todayArrivals  = bookings.filter(b => b.arrived && b.checkedInAt?.slice(0,10) === todayStr);
+  const completedToday = bookings.filter(b => b.status === "Completed" && b.completedAt?.slice(0,10) === todayStr);
+  const queue          = [...todayArrivals]
+    .filter(b => b.status !== "Completed" && b.status !== "Cancelled")
+    .sort((a,b) => (a.token||0) - (b.token||0));
+  const nowSeeing      = queue[0] || null;
+  const upNext         = queue.slice(1, 4);
+  const totalToday     = todaySchedule.length;
+  const seenCount      = completedToday.length;
+  const remaining      = queue.length;
+
+  const slotFmt = (dt) => dt
+    ? new Date(dt).toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", hour12:true })
+    : "—";
+
+  return (
+    <div style={{ padding:"24px 0 48px" }}>
+      <style>{`
+        .dv-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+        @media(max-width:900px){ .dv-grid { grid-template-columns:1fr 1fr; } }
+        @media(max-width:560px){ .dv-grid { grid-template-columns:1fr; } }
+        .dv-now { background:linear-gradient(135deg,#7c3aed,#6366f1); border-radius:20px; padding:32px; color:#fff; }
+        .dv-card { background:#fff; border-radius:16px; padding:24px; box-shadow:var(--shadow-sm); border:1px solid var(--gray-200); }
+        .dv-stat { background:#fff; border-radius:14px; padding:20px; box-shadow:var(--shadow-sm); border:1px solid var(--gray-200); text-align:center; }
+        .dv-next-item { display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid var(--gray-200); }
+        .dv-next-item:last-child { border-bottom:none; }
+        .dv-schedule-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #f3f0ff; }
+        .dv-schedule-row:last-child { border-bottom:none; }
+        .dv-avail-toggle { display:flex; align-items:center; gap:14px; background:#fff; border-radius:14px; padding:18px 22px; box-shadow:var(--shadow-sm); border:1px solid var(--gray-200); }
+      `}</style>
+
+      <div className="container">
+
+        {/* ── Row 1: Availability + Stats ──────────────────── */}
+        <div style={{ display:"flex", gap:14, flexWrap:"wrap", marginBottom:20, alignItems:"stretch" }}>
+
+          {/* Availability control */}
+          <div className="dv-avail-toggle" style={{ flex:"0 0 auto" }}>
+            <label className="toggle-switch">
+              <input type="checkbox" checked={available} onChange={toggleAvail}/>
+              <div className="toggle-track"/>
+            </label>
+            <div>
+              <div style={{ fontWeight:700, fontSize:"1rem", color: available ? "#16a34a" : "#dc2626" }}>
+                {available ? "🟢 Clinic Open" : "🔴 Clinic Closed"}
+              </div>
+              <div style={{ fontSize:".78rem", color:"var(--gray-400)", marginTop:2 }}>
+                Toggle to update patient booking availability
+              </div>
+            </div>
+          </div>
+
+          {/* Stat pills */}
+          {[
+            { label:"Total Booked", value: loading ? "—" : totalToday, bg:"#ede9fe", color:"#6d28d9", icon:"📋" },
+            { label:"Seen Today",   value: loading ? "—" : seenCount,  bg:"#dcfce7", color:"#166534", icon:"✅" },
+            { label:"In Queue",     value: loading ? "—" : remaining,  bg:"#fef3c7", color:"#92400e", icon:"⏳" },
+          ].map(s => (
+            <div key={s.label} className="dv-stat" style={{ background:s.bg, flex:"1 1 100px", minWidth:100 }}>
+              <div style={{ fontSize:"1.5rem", marginBottom:2 }}>{s.icon}</div>
+              <div style={{ fontSize:"2rem", fontWeight:800, color:s.color, lineHeight:1 }}>{s.value}</div>
+              <div style={{ fontSize:".72rem", color:s.color, fontWeight:600, marginTop:6 }}>{s.label}</div>
+            </div>
+          ))}
+
+          {/* Live clock */}
+          <div className="dv-stat" style={{ background:"linear-gradient(135deg,#1e1b4b,#4f46e5)", flex:"1 1 120px", minWidth:120 }}>
+            <div style={{ fontSize:"1.6rem", fontWeight:800, color:"#fff", fontFamily:"monospace", letterSpacing:2 }}>
+              {clock.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}
+            </div>
+            <div style={{ fontSize:".72rem", color:"rgba(255,255,255,.6)", marginTop:6, fontWeight:600 }}>
+              {clock.toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"})}
+            </div>
+          </div>
+        </div>
+
+        <div className="dv-grid">
+
+          {/* ── Now Seeing ─────────────────────────────────── */}
+          <div className="dv-now" style={{ gridColumn:"span 2" }}>
+            <div style={{ fontSize:".8rem", fontWeight:700, opacity:.7, letterSpacing:".1em", textTransform:"uppercase", marginBottom:10 }}>
+              🩺 Now Seeing
+            </div>
+            {loading ? (
+              <div style={{ opacity:.6, fontSize:"1rem" }}>Loading…</div>
+            ) : nowSeeing ? (
+              <>
+                <div style={{ display:"flex", alignItems:"flex-start", gap:20, flexWrap:"wrap" }}>
+                  <div style={{ background:"rgba(255,255,255,.2)", borderRadius:16, width:70, height:70, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"2.2rem", flexShrink:0 }}>
+                    👤
+                  </div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:"1.8rem", fontWeight:800, lineHeight:1.1 }}>{nowSeeing.name}</div>
+                    <div style={{ opacity:.75, fontSize:".95rem", marginTop:4 }}>Age {nowSeeing.age} · {slotFmt(nowSeeing.datetime)}</div>
+                    {nowSeeing.notes && (
+                      <div style={{ marginTop:10, background:"rgba(255,255,255,.15)", borderRadius:10, padding:"10px 14px", fontSize:".9rem" }}>
+                        📝 <strong>Reason:</strong> {nowSeeing.notes}
+                      </div>
+                    )}
+                    <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:14 }}>
+                      <span style={{ background:"rgba(255,255,255,.25)", borderRadius:20, padding:"4px 14px", fontWeight:700, fontSize:".85rem" }}>
+                        Token #{nowSeeing.token}
+                      </span>
+                      <a href={`tel:${nowSeeing.phone}`} style={{ color:"rgba(255,255,255,.8)", fontSize:".85rem", textDecoration:"none" }}>
+                        📞 {nowSeeing.phone}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => markCompleted(nowSeeing.id)}
+                  style={{ marginTop:22, width:"100%", padding:"14px", borderRadius:12, border:"2px solid rgba(255,255,255,.6)", background:"rgba(255,255,255,.15)", color:"#fff", fontFamily:"var(--font-body)", fontWeight:800, fontSize:"1rem", cursor:"pointer", transition:"all .2s" }}
+                  onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,.28)"}
+                  onMouseLeave={e => e.currentTarget.style.background="rgba(255,255,255,.15)"}
+                >
+                  ✅ Done — Call Next Patient
+                </button>
+              </>
+            ) : (
+              <div style={{ textAlign:"center", padding:"20px 0", opacity:.7 }}>
+                <div style={{ fontSize:"2.5rem", marginBottom:10 }}>🎉</div>
+                <div style={{ fontWeight:700, fontSize:"1.1rem" }}>Queue is clear</div>
+                <div style={{ fontSize:".85rem", marginTop:4, opacity:.8 }}>No patients currently waiting</div>
+              </div>
+            )}
+          </div>
+
+          {/* ── Up Next ────────────────────────────────────── */}
+          <div className="dv-card">
+            <div style={{ fontWeight:700, fontSize:".85rem", color:"var(--gray-400)", letterSpacing:".08em", textTransform:"uppercase", marginBottom:14 }}>
+              ⏭ Up Next
+            </div>
+            {loading ? (
+              <div style={{ color:"var(--gray-400)", fontSize:".9rem" }}>Loading…</div>
+            ) : upNext.length === 0 ? (
+              <div style={{ color:"var(--gray-400)", fontSize:".88rem", textAlign:"center", padding:"20px 0" }}>
+                No more patients in queue
+              </div>
+            ) : (
+              upNext.map((b, i) => (
+                <div key={b.id} className="dv-next-item">
+                  <div style={{ background:"#ede9fe", color:"#7c3aed", borderRadius:10, width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:".9rem", flexShrink:0 }}>
+                    #{b.token}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontWeight:700, color:"var(--navy)", fontSize:".95rem" }}>{b.name}</div>
+                    <div style={{ fontSize:".78rem", color:"var(--gray-400)", marginTop:2 }}>
+                      Age {b.age} · {slotFmt(b.datetime)}
+                    </div>
+                    {b.notes && (
+                      <div style={{ fontSize:".75rem", color:"var(--gray-600)", marginTop:3, fontStyle:"italic" }}>
+                        {b.notes}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+
+            {/* Upcoming not-yet-arrived */}
+            {!loading && (() => {
+              const upcoming = todaySchedule.filter(b => !b.arrived && b.status !== "Cancelled" && b.status !== "Completed");
+              if (!upcoming.length) return null;
+              return (
+                <div style={{ marginTop:16, paddingTop:14, borderTop:"1px dashed var(--gray-200)" }}>
+                  <div style={{ fontSize:".72rem", color:"var(--gray-400)", fontWeight:600, textTransform:"uppercase", letterSpacing:".06em", marginBottom:8 }}>
+                    📅 Not yet arrived ({upcoming.length})
+                  </div>
+                  {upcoming.slice(0,3).map(b => (
+                    <div key={b.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", fontSize:".82rem", borderBottom:"1px solid #f3f0ff" }}>
+                      <span style={{ color:"var(--navy)", fontWeight:600 }}>{b.name}</span>
+                      <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                        <span style={{ color:"var(--gray-400)" }}>{slotFmt(b.datetime)}</span>
+                        <button
+                          onClick={() => markArrived(b.id)}
+                          style={{ padding:"3px 10px", borderRadius:6, border:"1px solid #8b5cf6", background:"#ede9fe", color:"#7c3aed", fontFamily:"var(--font-body)", fontSize:".72rem", fontWeight:700, cursor:"pointer" }}
+                        >
+                          ✓ In
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {upcoming.length > 3 && <div style={{ fontSize:".75rem", color:"var(--gray-400)", marginTop:6 }}>+{upcoming.length-3} more scheduled</div>}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* ── Full Day Schedule ─────────────────────────── */}
+        <div className="dv-card" style={{ marginTop:16 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, flexWrap:"wrap", gap:8 }}>
+            <div style={{ fontWeight:700, color:"var(--navy)", fontSize:"1rem" }}>
+              📋 Full Day Schedule
+              <span style={{ marginLeft:10, background:"#ede9fe", color:"#6d28d9", borderRadius:20, padding:"2px 10px", fontSize:".72rem", fontWeight:700 }}>
+                {totalToday} patients
+              </span>
+            </div>
+            <span style={{ fontSize:".75rem", color:"var(--gray-400)" }}>Sorted by slot · Online bookings only</span>
+          </div>
+
+          {loading ? (
+            <div style={{ color:"var(--gray-400)", textAlign:"center", padding:"20px 0" }}>⏳ Loading…</div>
+          ) : todaySchedule.length === 0 ? (
+            <div style={{ color:"var(--gray-400)", textAlign:"center", padding:"28px 0", fontSize:".9rem" }}>
+              📭 No appointments booked for today.
+            </div>
+          ) : (
+            <div>
+              {todaySchedule.map((b, i) => {
+                const isPast = b.datetime && new Date(b.datetime) < new Date();
+                const statusColor =
+                  b.status === "Completed" ? "#16a34a" :
+                  b.status === "Cancelled" ? "#dc2626" :
+                  b.arrived ? "#7c3aed" : "#92400e";
+                const rowBg =
+                  b.status === "Completed" ? "#f0fdf4" :
+                  b.status === "Cancelled" ? "#fff5f5" :
+                  b.arrived ? "#faf5ff" :
+                  isPast ? "#fff7ed" : "#fff";
+
+                return (
+                  <div key={b.id} className="dv-schedule-row" style={{ background:rowBg, borderRadius:8, padding:"10px 12px", marginBottom:4 }}>
+                    {/* Time */}
+                    <div style={{ minWidth:72, fontWeight:700, fontSize:".88rem", color: isPast && b.status==="Pending" ? "#c2410c" : "var(--navy)" }}>
+                      {slotFmt(b.datetime)}
+                    </div>
+                    {/* Token */}
+                    {b.token
+                      ? <div style={{ background:"#ede9fe", color:"#7c3aed", borderRadius:8, padding:"3px 10px", fontWeight:800, fontSize:".78rem", minWidth:36, textAlign:"center" }}>#{b.token}</div>
+                      : <div style={{ minWidth:36 }}/>
+                    }
+                    {/* Name + notes */}
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontWeight:700, color:"var(--navy)", fontSize:".92rem", opacity: b.status==="Completed" ? .5 : 1 }}>{b.name}</div>
+                      {b.notes && <div style={{ fontSize:".75rem", color:"var(--gray-600)", marginTop:2, fontStyle:"italic" }}>📝 {b.notes}</div>}
+                    </div>
+                    {/* Age */}
+                    <div style={{ fontSize:".78rem", color:"var(--gray-400)", minWidth:40, textAlign:"center" }}>Ag. {b.age}</div>
+                    {/* Status */}
+                    <span className={`status-pill status-pill--${(b.status||"pending").toLowerCase()}`} style={{ fontSize:".72rem" }}>
+                      {b.status}
+                    </span>
+                    {/* Action */}
+                    <div style={{ minWidth:70, textAlign:"right" }}>
+                      {!b.arrived && b.status !== "Completed" && b.status !== "Cancelled" && (
+                        <button onClick={() => markArrived(b.id)}
+                          style={{ padding:"4px 10px", borderRadius:6, border:"1px solid #8b5cf6", background:"#ede9fe", color:"#7c3aed", fontFamily:"var(--font-body)", fontSize:".75rem", fontWeight:700, cursor:"pointer" }}>
+                          ✓ Arrived
+                        </button>
+                      )}
+                      {b.arrived && b.status !== "Completed" && b.status !== "Cancelled" && (
+                        <button onClick={() => markCompleted(b.id)}
+                          style={{ padding:"4px 10px", borderRadius:6, border:"1px solid #16a34a", background:"#dcfce7", color:"#166534", fontFamily:"var(--font-body)", fontSize:".75rem", fontWeight:700, cursor:"pointer" }}>
+                          ✓ Done
+                        </button>
+                      )}
+                      {b.status === "Completed" && <span style={{ fontSize:".78rem", color:"#16a34a", fontWeight:700 }}>✅ Seen</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 export default function PageDashboard() {
   return <DashboardGate><PageDashboardContent /></DashboardGate>;
 }
@@ -162,6 +440,7 @@ function PageDashboardContent() {
   const [lastRefreshed, setLastRefreshed]   = useState(null);
   const [showHistory, setShowHistory]       = useState(false);
   const [clock, setClock]                   = useState(new Date());
+  const [viewMode, setViewMode]             = useState("staff"); // "staff" | "doctor"
   const prevCountRef                        = useRef(null);
   // CHANGE: Ref for the All Bookings table — used to scroll precisely to it
   const bookingsTableRef                    = useRef(null);
@@ -283,6 +562,11 @@ function PageDashboardContent() {
   const todayAll      = bookings.filter(b=>(b.createdAt||"").slice(0,10)===todayStr);
   const waitingCount  = todayAll.filter(b=>b.status==="Pending"||b.status==="Confirmed").length;
 
+  // Today's Schedule — all online bookings for today sorted by appointment time
+  const todaySchedule = bookings
+    .filter(b => b.datetime?.slice(0,10) === todayStr && b.visitType !== "Walk-In")
+    .sort((a,b) => (a.datetime||"").localeCompare(b.datetime||""));
+
   // CHANGE: Avg wait time
   const avgWait = (() => {
     const done=completedToday.filter(b=>b.checkedInAt&&b.completedAt);
@@ -373,6 +657,32 @@ function PageDashboardContent() {
               <h1 style={{ color:"#fff", marginTop:10 }}>Queue Management System</h1>
               <p style={{ opacity:.85 }}>{new Date().toLocaleDateString("en-IN",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</p>
               {lastRefreshed && <p style={{ opacity:.6, fontSize:".8rem", marginTop:4 }}>Last synced: {lastRefreshed.toLocaleTimeString("en-IN",{timeStyle:"short"})}</p>}
+
+              {/* ── View Mode Toggle ── */}
+              <div style={{ display:"inline-flex", marginTop:16, background:"rgba(255,255,255,.15)", borderRadius:12, padding:4, gap:4 }}>
+                <button
+                  onClick={() => setViewMode("staff")}
+                  style={{
+                    padding:"8px 20px", borderRadius:8, border:"none", cursor:"pointer",
+                    fontFamily:"var(--font-body)", fontWeight:700, fontSize:".85rem",
+                    background: viewMode==="staff" ? "#fff" : "transparent",
+                    color: viewMode==="staff" ? "#7c3aed" : "rgba(255,255,255,.8)",
+                    transition:"all .2s",
+                  }}>
+                  🖥 Staff View
+                </button>
+                <button
+                  onClick={() => setViewMode("doctor")}
+                  style={{
+                    padding:"8px 20px", borderRadius:8, border:"none", cursor:"pointer",
+                    fontFamily:"var(--font-body)", fontWeight:700, fontSize:".85rem",
+                    background: viewMode==="doctor" ? "#fff" : "transparent",
+                    color: viewMode==="doctor" ? "#7c3aed" : "rgba(255,255,255,.8)",
+                    transition:"all .2s",
+                  }}>
+                  🩺 Doctor View
+                </button>
+              </div>
             </div>
 
             {/* Right — clock + availability */}
@@ -395,7 +705,23 @@ function PageDashboardContent() {
         </div>
       </div>
 
+      {/* ── Doctor View ───────────────────────────────────────── */}
+      {viewMode === "doctor" && (
+        <DoctorView
+          bookings={bookings}
+          loading={loading}
+          available={available}
+          toggleAvail={toggleAvail}
+          markCompleted={markCompleted}
+          markArrived={markArrived}
+          todayStr={new Date().toISOString().slice(0,10)}
+          clock={clock}
+        />
+      )}
+
       {/* ── CHANGE 2: Clinic Controls at TOP ─────────────────── */}
+      {viewMode === "staff" && (
+      <>
       <div className="container" style={{ paddingTop:20, paddingBottom:4 }}>
         <div className="dash-card" style={{ borderLeft:"4px solid var(--teal)" }}>
           <div className="controls-row">
@@ -518,6 +844,91 @@ function PageDashboardContent() {
               Total today: {waitingOnline.length+todayArrivals.length+completedToday.length} patients
             </p>
           </div>
+        </div>
+      </div>
+
+
+      {/* ── Today's Schedule ─────────────────────────────────── */}
+      <div className="container" style={{ marginBottom:8 }}>
+        <div className="dash-card">
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:8, marginBottom:16 }}>
+            <h3 className="dash-card__title" style={{ marginBottom:0 }}>
+              🗓 Today's Schedule
+              <span style={{ marginLeft:10, background:"#ede9fe", color:"#6d28d9", borderRadius:20, padding:"2px 10px", fontSize:".75rem", fontWeight:700, verticalAlign:"middle" }}>
+                {todaySchedule.length} booked
+              </span>
+            </h3>
+            <span style={{ fontSize:".78rem", color:"var(--gray-400)" }}>Sorted by appointment time · Auto-refreshes</span>
+          </div>
+
+          {loading ? (
+            <div style={{ color:"var(--gray-400)", textAlign:"center", padding:"24px 0" }}>⏳ Loading…</div>
+          ) : todaySchedule.length === 0 ? (
+            <div style={{ color:"var(--gray-400)", textAlign:"center", padding:"32px 0", fontSize:".9rem" }}>
+              📭 No online appointments booked for today yet.
+            </div>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr style={{ background:"#f3e8ff" }}>
+                    {["Time","Patient","Age","Phone","Status","Token","Action"].map(h=>(
+                      <th key={h} style={{ color:"#5b21b6" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {todaySchedule.map((b, i) => {
+                    const slotTime = b.datetime ? new Date(b.datetime).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}) : "—";
+                    const isPast   = b.datetime && new Date(b.datetime) < new Date();
+                    const rowStyle = b.status==="Completed"
+                      ? { opacity:.55, background:"#f0fdf4" }
+                      : isPast && b.status==="Pending"
+                        ? { background:"#fff7ed", borderLeft:"3px solid #fb923c" }
+                        : i % 2 === 0 ? {} : { background:"#fafafa" };
+                    return (
+                      <tr key={b.id} style={rowStyle}>
+                        <td style={{ whiteSpace:"nowrap", fontWeight:700, color: isPast && b.status==="Pending" ? "#c2410c" : "var(--navy)", minWidth:80 }}>
+                          {slotTime}
+                          {isPast && b.status==="Pending" && (
+                            <div style={{ fontSize:".68rem", color:"#ef4444", fontWeight:600, marginTop:2 }}>⚠ Overdue</div>
+                          )}
+                        </td>
+                        <td><strong>{b.name}</strong></td>
+                        <td style={{ color:"var(--gray-500)" }}>{b.age}</td>
+                        <td>
+                          <a href={`tel:${b.phone}`} style={{ color:"var(--teal-dark)", fontSize:".85rem" }}>{b.phone}</a>
+                        </td>
+                        <td>
+                          <span className={`status-pill status-pill--${(b.status||"pending").toLowerCase()}`}>
+                            {b.status}
+                          </span>
+                        </td>
+                        <td>
+                          {b.token ? <span className="token-badge">#{b.token}</span> : <span style={{ color:"var(--gray-300)" }}>—</span>}
+                        </td>
+                        <td>
+                          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                            {!b.arrived && b.status !== "Completed" && b.status !== "Cancelled" && (
+                              <button className="btn btn--primary btn--sm" style={{ padding:"4px 10px", whiteSpace:"nowrap" }}
+                                onClick={() => markArrived(b.id)}>✓ Arrived</button>
+                            )}
+                            {b.arrived && b.status !== "Completed" && (
+                              <button className="btn btn--success btn--sm" style={{ padding:"4px 10px" }}
+                                onClick={() => markCompleted(b.id)}>✓ Done</button>
+                            )}
+                            {b.status === "Completed" && (
+                              <span style={{ fontSize:".8rem", color:"#16a34a", fontWeight:600 }}>✅ Seen</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
@@ -741,6 +1152,8 @@ function PageDashboardContent() {
           )}
         </div>
       </div>
+      </>
+      )} {/* end staff view */}
 
     </div>
   );
