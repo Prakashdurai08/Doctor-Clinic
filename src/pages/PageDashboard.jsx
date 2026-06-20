@@ -148,9 +148,18 @@ function DashboardGate({ children }) {
 // ── DoctorView ────────────────────────────────────────────────
 function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, markArrived, todayStr, clock }) {
 
-  const todaySchedule = bookings
+  // Online bookings for today sorted by slot time
+  const onlineToday = bookings
     .filter(b => b.datetime?.slice(0,10) === todayStr && b.visitType !== "Walk-In")
     .sort((a,b) => (a.datetime||"").localeCompare(b.datetime||""));
+
+  // Walk-ins for today sorted by check-in time
+  const walkInsToday = bookings
+    .filter(b => b.visitType === "Walk-In" && b.checkedInAt?.slice(0,10) === todayStr)
+    .sort((a,b) => (a.checkedInAt||"").localeCompare(b.checkedInAt||""));
+
+  // Full schedule = online slots first, then walk-ins appended
+  const todaySchedule = [...onlineToday, ...walkInsToday];
 
   const todayArrivals  = bookings.filter(b => b.arrived && b.checkedInAt?.slice(0,10) === todayStr);
   const completedToday = bookings.filter(b => b.status === "Completed" && b.completedAt?.slice(0,10) === todayStr);
@@ -159,6 +168,7 @@ function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, 
     .sort((a,b) => (a.token||0) - (b.token||0));
   const nowSeeing      = queue[0] || null;
   const upNext         = queue.slice(1, 4);
+  // Total = all patients today (online + walk-in)
   const totalToday     = todaySchedule.length;
   const seenCount      = completedToday.length;
   const remaining      = queue.length;
@@ -174,7 +184,8 @@ function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, 
         @media(max-width:900px){ .dv-grid { grid-template-columns:1fr 1fr; } }
         @media(max-width:560px){ .dv-grid { grid-template-columns:1fr; } }
         .dv-now { background:linear-gradient(135deg,#7c3aed,#6366f1); border-radius:20px; padding:32px; color:#fff; }
-        .dv-card { background:#fff; border-radius:16px; padding:24px; box-shadow:var(--shadow-sm); border:1px solid var(--gray-200); }
+        .dv-card { background:#fff; border-radius:16px; padding:24px; box-shadow:var(--shadow-sm); border:1px solid var(--gray-200); overflow:hidden; }
+        @media(max-width:560px){ .dv-card { padding:14px; } .dv-now { padding:20px; } }
         .dv-stat { background:#fff; border-radius:14px; padding:20px; box-shadow:var(--shadow-sm); border:1px solid var(--gray-200); text-align:center; }
         .dv-next-item { display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid var(--gray-200); }
         .dv-next-item:last-child { border-bottom:none; }
@@ -350,7 +361,7 @@ function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, 
                 {totalToday} patients
               </span>
             </div>
-            <span style={{ fontSize:".75rem", color:"var(--gray-400)" }}>Sorted by slot · Online bookings only</span>
+            <span style={{ fontSize:".75rem", color:"var(--gray-400)" }}>Online slots + Walk-ins · Sorted by time</span>
           </div>
 
           {loading ? (
@@ -360,7 +371,8 @@ function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, 
               📭 No appointments booked for today.
             </div>
           ) : (
-            <div>
+            <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
+            <div style={{ minWidth:480 }}>
               {todaySchedule.map((b, i) => {
                 const isPast = b.datetime && new Date(b.datetime) < new Date();
                 const statusColor =
@@ -375,45 +387,54 @@ function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, 
 
                 return (
                   <div key={b.id} className="dv-schedule-row" style={{ background:rowBg, borderRadius:8, padding:"10px 12px", marginBottom:4 }}>
-                    {/* Time */}
-                    <div style={{ minWidth:72, fontWeight:700, fontSize:".88rem", color: isPast && b.status==="Pending" ? "#c2410c" : "var(--navy)" }}>
-                      {slotFmt(b.datetime)}
+                    {/* Col 1: Time + Token */}
+                    <div style={{ minWidth:60, flexShrink:0 }}>
+                      <div style={{ fontWeight:700, fontSize:".83rem", color: isPast && b.status==="Pending" ? "#c2410c" : "var(--navy)", whiteSpace:"nowrap" }}>
+                        {b.visitType === "Walk-In"
+                          ? <span style={{ fontSize:".7rem", background:"#fef3c7", color:"#92400e", borderRadius:4, padding:"1px 5px", fontWeight:700 }}>Walk-In</span>
+                          : slotFmt(b.datetime)
+                        }
+                      </div>
+                      {b.token && (
+                        <div style={{ background:"#ede9fe", color:"#7c3aed", borderRadius:5, padding:"1px 6px", fontWeight:800, fontSize:".68rem", marginTop:3, display:"inline-block" }}>
+                          #{b.token}
+                        </div>
+                      )}
                     </div>
-                    {/* Token */}
-                    {b.token
-                      ? <div style={{ background:"#ede9fe", color:"#7c3aed", borderRadius:8, padding:"3px 10px", fontWeight:800, fontSize:".78rem", minWidth:36, textAlign:"center" }}>#{b.token}</div>
-                      : <div style={{ minWidth:36 }}/>
-                    }
-                    {/* Name + notes */}
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontWeight:700, color:"var(--navy)", fontSize:".92rem", opacity: b.status==="Completed" ? .5 : 1 }}>{b.name}</div>
-                      {b.notes && <div style={{ fontSize:".75rem", color:"var(--gray-600)", marginTop:2, fontStyle:"italic" }}>📝 {b.notes}</div>}
+                    {/* Col 2: Name + status pill + notes */}
+                    <div style={{ flex:1, minWidth:0, overflow:"hidden" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:5, flexWrap:"wrap" }}>
+                        <span style={{ fontWeight:700, color:"var(--navy)", fontSize:".88rem", opacity: b.status==="Completed" ? .5 : 1, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", maxWidth:120 }}>{b.name}</span>
+                        <span className={`status-pill status-pill--${(b.status||"pending").toLowerCase()}`} style={{ fontSize:".62rem", padding:"1px 6px", flexShrink:0 }}>
+                          {b.status}
+                        </span>
+                      </div>
+                      {b.notes && (
+                        <div style={{ fontSize:".7rem", color:"var(--gray-500)", marginTop:2, fontStyle:"italic", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                          📝 {b.notes}
+                        </div>
+                      )}
                     </div>
-                    {/* Age */}
-                    <div style={{ fontSize:".78rem", color:"var(--gray-400)", minWidth:40, textAlign:"center" }}>Ag. {b.age}</div>
-                    {/* Status */}
-                    <span className={`status-pill status-pill--${(b.status||"pending").toLowerCase()}`} style={{ fontSize:".72rem" }}>
-                      {b.status}
-                    </span>
-                    {/* Action */}
-                    <div style={{ minWidth:70, textAlign:"right" }}>
+                    {/* Col 3: Action */}
+                    <div style={{ flexShrink:0 }}>
                       {!b.arrived && b.status !== "Completed" && b.status !== "Cancelled" && (
                         <button onClick={() => markArrived(b.id)}
-                          style={{ padding:"4px 10px", borderRadius:6, border:"1px solid #8b5cf6", background:"#ede9fe", color:"#7c3aed", fontFamily:"var(--font-body)", fontSize:".75rem", fontWeight:700, cursor:"pointer" }}>
-                          ✓ Arrived
+                          style={{ padding:"5px 9px", borderRadius:6, border:"1px solid #8b5cf6", background:"#ede9fe", color:"#7c3aed", fontFamily:"var(--font-body)", fontSize:".72rem", fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
+                          ✓ In
                         </button>
                       )}
                       {b.arrived && b.status !== "Completed" && b.status !== "Cancelled" && (
                         <button onClick={() => markCompleted(b.id)}
-                          style={{ padding:"4px 10px", borderRadius:6, border:"1px solid #16a34a", background:"#dcfce7", color:"#166534", fontFamily:"var(--font-body)", fontSize:".75rem", fontWeight:700, cursor:"pointer" }}>
+                          style={{ padding:"5px 9px", borderRadius:6, border:"1px solid #16a34a", background:"#dcfce7", color:"#166534", fontFamily:"var(--font-body)", fontSize:".72rem", fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
                           ✓ Done
                         </button>
                       )}
-                      {b.status === "Completed" && <span style={{ fontSize:".78rem", color:"#16a34a", fontWeight:700 }}>✅ Seen</span>}
+                      {b.status === "Completed" && <span style={{ fontSize:".8rem", color:"#16a34a", fontWeight:700 }}>✅</span>}
                     </div>
                   </div>
                 );
               })}
+            </div>
             </div>
           )}
         </div>

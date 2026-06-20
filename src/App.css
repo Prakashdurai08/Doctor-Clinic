@@ -580,6 +580,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .dash-card {
   background: #fff; border-radius: var(--radius-lg); padding: 28px;
   box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200); margin-bottom: 20px;
+  overflow: hidden;
 }
 .dash-card__title { font-size: 1rem; font-family: var(--font-body); font-weight: 700; margin-bottom: 16px; color: var(--navy); }
 .dash-card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
@@ -638,7 +639,7 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 
 /* Table */
-.table-wrap { overflow-x: auto; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); scroll-snap-type: x proximity; }
 table { width: 100%; border-collapse: collapse; background: #fff; min-width: 600px; }
 /* ===== CHANGED: table header uses purple gradient ===== */
 thead { background: linear-gradient(135deg, var(--teal), var(--blue)); color: #fff; }
@@ -724,7 +725,8 @@ tbody tr:hover { background: var(--off-white); }
   .rating-summary__num { font-size: 3rem; }
   .contact-big-btn__val { font-size: .85rem; word-break: break-all; }
   .scroll-to-top { bottom: 16px; right: 16px; width: 40px; height: 40px; }
-  table { min-width: 480px; }
+  table { min-width: 420px; }
+  .dash-card { padding: 16px; }
   th, td { padding: 10px 12px; }
   .contact-grid { grid-template-columns: 1fr; }
 }
@@ -1070,4 +1072,20 @@ input[type="datetime-local"].form-control::-webkit-calendar-picker-indicator {
 }
 @media (max-width: 900px) {
   .dv-now { grid-column: span 2; }
+}
+
+/* ── Mobile table scroll hint ────────────────────────────────── */
+@media (max-width: 600px) {
+  .table-scroll-wrap {
+    position: relative;
+  }
+  .table-scroll-wrap::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 32px; height: 100%;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,.9));
+    pointer-events: none;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
 }

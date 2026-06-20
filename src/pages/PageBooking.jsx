@@ -194,7 +194,7 @@ export default function PageBooking() {
             <div className="booking-summary__row"><span>Name</span><strong>{lastBooking.name}</strong></div>
             <div className="booking-summary__row"><span>Phone</span><strong>{lastBooking.phone}</strong></div>
             <div className="booking-summary__row"><span>Date & Time</span><strong>{fmtDate(lastBooking.datetime)}</strong></div>
-            {lastBooking.notes && <div className="booking-summary__row"><span>Notes</span><strong>{lastBooking.notes}</strong></div>}
+            {lastBooking.notes && <div className="booking-summary__row"><span>Reason</span><strong>{lastBooking.notes}</strong></div>}
           </div>
           <div style={{ marginTop: 16, padding: "14px 20px", background: "var(--teal-light)", borderRadius: 10, fontSize: ".88rem", color: "var(--teal-dark)" }}>
             💡 <strong>Tip:</strong> Check your queue position on our <strong>Token Board</strong> in the nav menu.
@@ -356,20 +356,32 @@ export default function PageBooking() {
                 </div>
               )}
 
-              {/* Notes field — unchanged */}
+              {/* Reason for Visit dropdown */}
               <div className="form-group" style={{ marginTop: 16 }}>
                 <label className="form-label">
-                  Symptoms / Notes{" "}
+                  Reason for Visit{" "}
                   <span style={{ color: "var(--gray-400)", fontSize: ".8rem" }}>(optional)</span>
                 </label>
-                <textarea
+                <select
                   name="notes"
                   className="form-control"
-                  rows="4"
-                  placeholder="Briefly describe your symptoms…"
                   value={form.notes}
                   onChange={handleChange}
-                />
+                  style={{ cursor:"pointer" }}
+                >
+                  <option value="">— Select a reason —</option>
+                  <option value="Fever / Cold / Flu">🤒 Fever / Cold / Flu</option>
+                  <option value="General Checkup">🩺 General Checkup</option>
+                  <option value="Follow-up Visit">📋 Follow-up Visit</option>
+                  <option value="Lab Results Review">🔬 Lab Results Review</option>
+                  <option value="Injury / Pain">🩹 Injury / Pain</option>
+                  <option value="Stomach / Digestion">🫃 Stomach / Digestion</option>
+                  <option value="Skin Problem">💊 Skin Problem</option>
+                  <option value="Blood Pressure / Sugar">❤️ Blood Pressure / Sugar</option>
+                  <option value="Child Health">👶 Child Health</option>
+                  <option value="Women's Health">👩 Women's Health</option>
+                  <option value="Other">💬 Other</option>
+                </select>
               </div>
 
               <div className="booking-actions">

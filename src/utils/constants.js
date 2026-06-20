@@ -37,7 +37,7 @@ export const LS = {
     try {
       await fetch(SHEET_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        mode: "no-cors",
         body: JSON.stringify(entry),
       });
     } catch (err) {
@@ -66,7 +66,7 @@ export const LS = {
     try {
       await fetch(SHEET_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        mode: "no-cors",
         body: JSON.stringify({ action: "update", id, ...fields }),
       });
     } catch (err) {
@@ -78,7 +78,7 @@ export const LS = {
     try {
       await fetch(SHEET_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        mode: "no-cors",
         body: JSON.stringify({ action: "delete", id }),
       });
     } catch (err) {
@@ -90,7 +90,7 @@ export const LS = {
     try {
       await fetch(SHEET_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        mode: "no-cors",
         body: JSON.stringify({ action: "deleteAll" }),
       });
     } catch (err) {
