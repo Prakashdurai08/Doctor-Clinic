@@ -37,6 +37,7 @@ export const LS = {
     try {
       await fetch(SHEET_URL, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(entry),
       });
     } catch (err) {
@@ -65,6 +66,7 @@ export const LS = {
     try {
       await fetch(SHEET_URL, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "update", id, ...fields }),
       });
     } catch (err) {
@@ -76,6 +78,7 @@ export const LS = {
     try {
       await fetch(SHEET_URL, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "delete", id }),
       });
     } catch (err) {
@@ -87,6 +90,7 @@ export const LS = {
     try {
       await fetch(SHEET_URL, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "deleteAll" }),
       });
     } catch (err) {
@@ -103,7 +107,7 @@ export const fmtDate = (iso) =>
 
 export function openWhatsApp(data) {
   const msg = encodeURIComponent(
-    `🏥 *New Appointment – ${CLINIC.name}*\n\n👤 ${data.name}\n🎂 Age: ${data.age}\n📞 ${data.phone}\n✉️ ${data.email || "—"}\n📅 ${data.datetime}\n📝 ${data.notes || "N/A"}\n\n_Sent via website_`
+    `🏥 *New Appointment – ${CLINIC.name}*\n\n👤 ${data.name}\n🎂 Age: ${data.age}\n📞 ${data.phone}\n✉️ ${data.email || "—"}\n📅 ${fmtDate(data.datetime)}\n📝 ${data.notes || "N/A"}\n\n_Sent via website_`
   );
   window.open(`https://wa.me/${CLINIC.whatsapp}?text=${msg}`, "_blank");
 }

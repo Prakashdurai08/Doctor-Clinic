@@ -39,7 +39,7 @@ export default function MobileNav({ page, setPage }) {
     { id: "faq",       icon: "❓", label: "FAQ",             desc: "Frequently asked questions",   badge: null },
   ];
 
-  const isMoreActive = ["token","dashboard","reviews","faq","pricing"].includes(page);
+  const isMoreActive = ["token","dashboard","reviews","faq"].includes(page);
 
   // Tab config — Book has special style, More opens drawer
   const tabs = [

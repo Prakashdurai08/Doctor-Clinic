@@ -9,8 +9,9 @@ import { CLINIC } from "../utils/constants";
 
 export default function PageContact({ setPage }) {
   const [form, setForm] = useState({ name: "", phone: "", msg: "" });
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState("");
+  const [sent, setSent]           = useState(false);
+  const [error, setError]         = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -21,7 +22,12 @@ export default function PageContact({ setPage }) {
       return;
     }
     setError("");
-    setSent(true);
+    // BUG 6 FIX: prevent double-submit with loading state
+    setSubmitting(true);
+    setTimeout(() => {
+      setSubmitting(false);
+      setSent(true);
+    }, 600);
   };
 
   return (
@@ -117,8 +123,8 @@ export default function PageContact({ setPage }) {
                       <textarea name="msg" className="form-control" rows="5" placeholder="Your message…" value={form.msg} onChange={handleChange} required />
                     </div>
                     {error && <div className="alert alert--danger">{error}</div>}
-                    <button type="submit" className="btn btn--primary" style={{ width: "100%", justifyContent: "center" }}>
-                      📤 Send Message
+                    <button type="submit" className="btn btn--primary" style={{ width: "100%", justifyContent: "center" }} disabled={submitting}>
+                      {submitting ? "⏳ Sending…" : "📤 Send Message"}
                     </button>
                   </form>
                 ) : (

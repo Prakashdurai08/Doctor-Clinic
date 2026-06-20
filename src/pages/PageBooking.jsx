@@ -265,7 +265,10 @@ export default function PageBooking() {
               <div className="form-group">
                 <label className="form-label">Select Date *</label>
                 <div style={{
-                  display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4,
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: 8,
+                  marginTop: 4,
                 }}>
                   {getAvailableDates().map(dateStr => {
                     const d = new Date(dateStr);
@@ -303,9 +306,11 @@ export default function PageBooking() {
                 <div className="form-group" style={{ marginTop: 16 }}>
                   <label className="form-label">Select Time Slot *</label>
                   {generateSlots(selectedDate).length === 0 ? (
-                    <p style={{ color: "var(--danger)", fontSize: ".9rem", marginTop: 8 }}>
-                      No slots available on this day.
-                    </p>
+                    <div style={{ marginTop: 8, padding: "14px 16px", background: "#fff7ed", borderRadius: 10, border: "1px solid #fed7aa" }}>
+                      <p style={{ color: "#c2410c", fontSize: ".9rem", fontWeight: 600, margin: 0 }}>
+                        🚫 Clinic is closed on Sundays. Please select another date.
+                      </p>
+                    </div>
                   ) : (
                     <div style={{
                       display: "grid",

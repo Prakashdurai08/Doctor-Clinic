@@ -633,7 +633,11 @@ function PageDashboardContent() {
       `}</style>
 
       {/* ── Purple Header ─────────────────────────────────────── */}
-      <div className="dash-header">
+      <div className="dash-header" style={{
+        background: viewMode === "doctor"
+          ? "linear-gradient(135deg, #0f766e, #0369a1)"
+          : "linear-gradient(135deg, #7c3aed, #4f46e5)",
+      }}>
         <div className="container">
           <div className="dash-header__inner">
 
@@ -659,29 +663,36 @@ function PageDashboardContent() {
               {lastRefreshed && <p style={{ opacity:.6, fontSize:".8rem", marginTop:4 }}>Last synced: {lastRefreshed.toLocaleTimeString("en-IN",{timeStyle:"short"})}</p>}
 
               {/* ── View Mode Toggle ── */}
-              <div style={{ display:"inline-flex", marginTop:16, background:"rgba(255,255,255,.15)", borderRadius:12, padding:4, gap:4 }}>
+              <div style={{ display:"inline-flex", marginTop:16, background:"rgba(0,0,0,.18)", borderRadius:14, padding:5, gap:4 }}>
                 <button
                   onClick={() => setViewMode("staff")}
                   style={{
-                    padding:"8px 20px", borderRadius:8, border:"none", cursor:"pointer",
+                    padding:"9px 22px", borderRadius:10, border:"none", cursor:"pointer",
                     fontFamily:"var(--font-body)", fontWeight:700, fontSize:".85rem",
                     background: viewMode==="staff" ? "#fff" : "transparent",
-                    color: viewMode==="staff" ? "#7c3aed" : "rgba(255,255,255,.8)",
-                    transition:"all .2s",
+                    color: viewMode==="staff" ? "#7c3aed" : "rgba(255,255,255,.6)",
+                    boxShadow: viewMode==="staff" ? "0 2px 8px rgba(0,0,0,.18)" : "none",
+                    transform: viewMode==="staff" ? "translateY(-1px)" : "none",
+                    transition:"all .22s cubic-bezier(.4,0,.2,1)",
                   }}>
                   🖥 Staff View
                 </button>
                 <button
                   onClick={() => setViewMode("doctor")}
                   style={{
-                    padding:"8px 20px", borderRadius:8, border:"none", cursor:"pointer",
+                    padding:"9px 22px", borderRadius:10, border:"none", cursor:"pointer",
                     fontFamily:"var(--font-body)", fontWeight:700, fontSize:".85rem",
                     background: viewMode==="doctor" ? "#fff" : "transparent",
-                    color: viewMode==="doctor" ? "#7c3aed" : "rgba(255,255,255,.8)",
-                    transition:"all .2s",
+                    color: viewMode==="doctor" ? "#0f766e" : "rgba(255,255,255,.6)",
+                    boxShadow: viewMode==="doctor" ? "0 2px 8px rgba(0,0,0,.18)" : "none",
+                    transform: viewMode==="doctor" ? "translateY(-1px)" : "none",
+                    transition:"all .22s cubic-bezier(.4,0,.2,1)",
                   }}>
                   🩺 Doctor View
                 </button>
+              </div>
+              <div style={{ marginTop:9, fontSize:".72rem", fontWeight:600, letterSpacing:".08em", textTransform:"uppercase", opacity:.65, color:"#fff" }}>
+                {viewMode === "staff" ? "📋 Managing queue & bookings" : "🩺 Doctor patient view"}
               </div>
             </div>
 

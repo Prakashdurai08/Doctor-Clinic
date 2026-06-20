@@ -12,6 +12,7 @@ export default function PageToken() {
   const [lastSync, setLastSync] = useState(null);
   // CHANGE: TV mode state
   const [tvMode, setTvMode]     = useState(false);
+  const [clock, setClock]       = useState(new Date()); // BUG5 FIX: live clock
 
   const refresh = async () => {
     const data = await LS.fetchBookings();
@@ -31,7 +32,8 @@ export default function PageToken() {
     if (!tvMode) return;
     const onKey = (e) => { if (e.key === "Escape") setTvMode(false); };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const tick = setInterval(() => setClock(new Date()), 1000);
+    return () => { window.removeEventListener("keydown", onKey); clearInterval(tick); };
   }, [tvMode]);
 
   const todayStr   = new Date().toISOString().slice(0,10);
@@ -68,9 +70,9 @@ export default function PageToken() {
           <div className="tv-mode-overlay__name">No patients in queue</div>
         )}
         <div className="tv-mode-overlay__sub" style={{ marginTop: 32 }}>
-          {new Date().toLocaleDateString("en-IN",{weekday:"long",month:"long",day:"numeric"})}
+          {clock.toLocaleDateString("en-IN",{weekday:"long",month:"long",day:"numeric"})}
           {" · "}
-          {new Date().toLocaleTimeString("en-IN",{timeStyle:"short"})}
+          {clock.toLocaleTimeString("en-IN",{timeStyle:"short"})}
         </div>
       </div>
     );
