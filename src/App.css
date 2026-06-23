@@ -1046,6 +1046,49 @@ input[type="datetime-local"].form-control::-webkit-calendar-picker-indicator {
 }
 .tv-mode-overlay__exit:hover { background: rgba(255,255,255,.2); }
 
+/* ── TV Mode animations ───────────────────────────────────── */
+@keyframes tv-pulse-ring {
+  0%   { transform: scale(.85); opacity: .8; }
+  60%  { transform: scale(1.08); opacity: .3; }
+  100% { transform: scale(1.2);  opacity: 0; }
+}
+@keyframes tv-token-pop {
+  0%   { transform: scale(.92); opacity:.4; }
+  60%  { transform: scale(1.04); }
+  100% { transform: scale(1);   opacity:1; }
+}
+@keyframes tv-bell {
+  0%,100% { transform: rotate(0); }
+  15%  { transform: rotate(15deg); }
+  30%  { transform: rotate(-12deg); }
+  45%  { transform: rotate(10deg); }
+  60%  { transform: rotate(-8deg); }
+  75%  { transform: rotate(5deg); }
+}
+@keyframes tv-breathe {
+  0%,100% { opacity: .55; }
+  50%      { opacity: .9; }
+}
+
+.tv-pulse-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 3px solid rgba(13,148,136,.6);
+  animation: tv-pulse-ring 1.6s ease-out infinite;
+  pointer-events: none;
+}
+.tv-token-pop {
+  animation: tv-token-pop .45s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.tv-bell-ring {
+  display: inline-block;
+  animation: tv-bell .8s ease-in-out;
+}
+.tv-label-breathe {
+  animation: tv-breathe 2.5s ease-in-out infinite;
+}
+
+
 /* ══════════════════════════════════════════════════════════════
    CHANGE: Reviews page — Google Reviews CTA
    ══════════════════════════════════════════════════════════════ */
@@ -1088,4 +1131,12 @@ input[type="datetime-local"].form-control::-webkit-calendar-picker-indicator {
     pointer-events: none;
     border-radius: 0 var(--radius-md) var(--radius-md) 0;
   }
+}
+
+/* ── Slot button hover ───────────────────────────────────────── */
+.booking-form button[type='button']:not(:disabled):hover {
+  border-color: var(--teal) !important;
+  background: var(--teal-light) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(13,148,136,.18) !important;
 }

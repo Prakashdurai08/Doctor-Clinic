@@ -3,7 +3,7 @@
 // CHANGED (Item E): Added "TV Mode" — fullscreen "Now Serving" display
 // for waiting-room TVs. Uses .tv-mode-overlay styles from App.css.
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LS } from "../utils/constants";
 
 export default function PageToken() {
@@ -51,25 +51,66 @@ export default function PageToken() {
   };
 
   // ── CHANGE: TV Mode fullscreen overlay ─────────────────────────
+  // Track token changes for pop animation
+  const prevTokenRef = useRef(currentToken);
+  const [tokenKey, setTokenKey]   = useState(0);
+  const [bellKey, setBellKey]     = useState(0);
+
+  useEffect(() => {
+    if (prevTokenRef.current !== currentToken && currentToken) {
+      setTokenKey(k => k + 1);
+      setBellKey(k => k + 1);
+    }
+    prevTokenRef.current = currentToken;
+  }, [currentToken]);
+
   if (tvMode) {
     return (
-      <div className="tv-mode-overlay">
+      <div className="tv-mode-overlay" style={{ overflow:"hidden" }}>
         <button className="tv-mode-overlay__exit" onClick={() => setTvMode(false)}>
           ✕ Exit TV Mode (Esc)
         </button>
-        <div className="tv-mode-overlay__label">🔔 Now Serving</div>
+
+        {/* Label with bell */}
+        <div className="tv-mode-overlay__label tv-label-breathe">
+          <span key={bellKey} className={bellKey > 0 ? "tv-bell-ring" : ""}>🔔</span>
+          {" "}NOW SERVING
+        </div>
+
         {currentToken ? (
           <>
-            <div className="tv-mode-overlay__token">#{currentToken}</div>
-            {currentName && <div className="tv-mode-overlay__name">{currentName.split(" ")[0]}</div>}
+            {/* Pulse rings behind token */}
+            <div style={{ position:"relative", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <div className="tv-pulse-ring" style={{ width:"clamp(180px,30vw,340px)", height:"clamp(180px,30vw,340px)", animationDelay:"0s" }}/>
+              <div className="tv-pulse-ring" style={{ width:"clamp(180px,30vw,340px)", height:"clamp(180px,30vw,340px)", animationDelay:".5s" }}/>
+              <div className="tv-pulse-ring" style={{ width:"clamp(180px,30vw,340px)", height:"clamp(180px,30vw,340px)", animationDelay:"1s" }}/>
+              <div
+                key={tokenKey}
+                className={`tv-mode-overlay__token ${tokenKey > 0 ? "tv-token-pop" : ""}`}
+                style={{ position:"relative", zIndex:1 }}
+              >
+                #{currentToken}
+              </div>
+            </div>
+
+            {currentName && (
+              <div className="tv-mode-overlay__name">
+                {currentName.split(" ")[0]}
+              </div>
+            )}
             {nextToken && (
-              <div className="tv-mode-overlay__sub">Next up: #{nextToken}</div>
+              <div className="tv-mode-overlay__sub">
+                Next up: #{nextToken}
+              </div>
             )}
           </>
         ) : (
-          <div className="tv-mode-overlay__name">No patients in queue</div>
+          <div className="tv-mode-overlay__name" style={{ opacity:.6 }}>
+            No patients in queue
+          </div>
         )}
-        <div className="tv-mode-overlay__sub" style={{ marginTop: 32 }}>
+
+        <div className="tv-mode-overlay__sub" style={{ marginTop:32 }}>
           {clock.toLocaleDateString("en-IN",{weekday:"long",month:"long",day:"numeric"})}
           {" · "}
           {clock.toLocaleTimeString("en-IN",{timeStyle:"short"})}

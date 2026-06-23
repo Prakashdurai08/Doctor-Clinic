@@ -340,6 +340,10 @@ export default function PageBooking() {
                               fontSize: ".85rem",
                               cursor: "pointer",
                               textAlign: "center",
+                              transform: isSelected ? "scale(1.06)" : "scale(1)",
+                              boxShadow: isSelected ? "0 4px 16px rgba(13,148,136,.35)" : "none",
+                              transition: "all .18s cubic-bezier(.34,1.56,.64,1)",
+                              outline: "none",
                             }}
                           >
                             {fmtSlot(slot)}

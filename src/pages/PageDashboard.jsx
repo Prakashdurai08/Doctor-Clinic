@@ -33,37 +33,238 @@ const WhatsAppIcon = ({ size = 16 }) => (
 
 // ── Print token slip ──────────────────────────────────────────
 function printTokenSlip(b) {
-  const win = window.open("", "_blank", "width=320,height=420");
-  win.document.write(`
-    <html><head><title>Token Slip — ${CLINIC.name}</title>
-    <style>
-      body{font-family:Arial,sans-serif;text-align:center;padding:28px;margin:0;}
-      .clinic{font-size:17px;font-weight:bold;color:#1e1e2e;margin-bottom:2px;}
-      .sub{font-size:11px;color:#888;margin-bottom:16px;}
-      .label{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;}
-      .token-num{font-size:80px;font-weight:900;color:#7c3aed;margin:8px 0;line-height:1;}
-      .name{font-size:18px;font-weight:700;color:#1e1e2e;margin:6px 0 2px;}
-      .age{font-size:12px;color:#666;margin-bottom:12px;}
-      .date{font-size:12px;color:#555;margin-top:10px;}
-      hr{border:none;border-top:1px dashed #ddd;margin:14px 0;}
-      .footer{font-size:10px;color:#bbb;margin-top:10px;}
-    </style></head><body>
-    <div class="clinic">${CLINIC.name}</div>
-    <div class="sub">Token Slip</div>
-    <hr/>
-    <div class="label">Token Number</div>
+  const apptTime = b.datetime
+    ? new Date(b.datetime).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})
+    : null;
+  const apptDate = b.datetime
+    ? new Date(b.datetime).toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})
+    : new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  const visitType = b.visitType || "Online";
+  const reason    = b.notes || "";
+  const printedAt = new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true});
+
+  const win = window.open("", "_blank", "width=360,height=600");
+  win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>Token Slip — ${CLINIC.name}</title>
+  <meta charset="UTF-8"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+    *{ margin:0; padding:0; box-sizing:border-box; }
+    body{
+      font-family:'Inter',Arial,sans-serif;
+      background:#fff;
+      width:80mm;
+      margin:0 auto;
+      padding:0;
+      color:#1e1b4b;
+    }
+    .slip{
+      padding:20px 18px 16px;
+      border:1px solid #e5e7eb;
+      min-height:100vh;
+    }
+    /* Header */
+    .header{
+      text-align:center;
+      padding-bottom:14px;
+      border-bottom:2px dashed #e5e7eb;
+      margin-bottom:14px;
+    }
+    .clinic-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:40px;height:40px;
+      background:#7c3aed;
+      border-radius:10px;
+      margin-bottom:8px;
+    }
+    .clinic-badge span{
+      color:#fff;
+      font-size:20px;
+      font-weight:900;
+    }
+    .clinic-name{
+      font-size:15px;
+      font-weight:700;
+      color:#1e1b4b;
+      margin-bottom:2px;
+    }
+    .slip-title{
+      font-size:10px;
+      color:#9ca3af;
+      text-transform:uppercase;
+      letter-spacing:2px;
+      font-weight:600;
+    }
+    /* Token */
+    .token-section{
+      text-align:center;
+      padding:18px 0 14px;
+      border-bottom:2px dashed #e5e7eb;
+      margin-bottom:14px;
+    }
+    .token-label{
+      font-size:9px;
+      text-transform:uppercase;
+      letter-spacing:2px;
+      color:#9ca3af;
+      font-weight:600;
+      margin-bottom:4px;
+    }
+    .token-num{
+      font-size:72px;
+      font-weight:900;
+      color:#7c3aed;
+      line-height:1;
+      letter-spacing:-2px;
+    }
+    .visit-badge{
+      display:inline-block;
+      margin-top:8px;
+      padding:3px 12px;
+      border-radius:20px;
+      font-size:10px;
+      font-weight:700;
+      letter-spacing:.5px;
+      background:${visitType==="Walk-In" ? "#fef3c7" : "#ede9fe"};
+      color:${visitType==="Walk-In" ? "#92400e" : "#6d28d9"};
+    }
+    /* Details */
+    .details{
+      margin-bottom:14px;
+    }
+    .row{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      padding:6px 0;
+      border-bottom:1px solid #f3f4f6;
+      gap:8px;
+    }
+    .row:last-child{ border-bottom:none; }
+    .row-label{
+      font-size:9px;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      color:#9ca3af;
+      font-weight:600;
+      flex-shrink:0;
+      padding-top:1px;
+    }
+    .row-val{
+      font-size:12px;
+      font-weight:700;
+      color:#1e1b4b;
+      text-align:right;
+    }
+    .row-val.reason{
+      font-size:11px;
+      font-weight:600;
+      color:#6d28d9;
+    }
+    /* Footer */
+    .footer{
+      border-top:2px dashed #e5e7eb;
+      padding-top:12px;
+      text-align:center;
+    }
+    .footer-msg{
+      font-size:11px;
+      color:#6b7280;
+      margin-bottom:6px;
+      line-height:1.5;
+    }
+    .footer-addr{
+      font-size:9px;
+      color:#9ca3af;
+      line-height:1.5;
+    }
+    .printed-at{
+      font-size:9px;
+      color:#d1d5db;
+      margin-top:10px;
+    }
+    /* Barcode-style decoration */
+    .barcode{
+      display:flex;
+      justify-content:center;
+      gap:2px;
+      margin:10px 0 6px;
+    }
+    .barcode span{
+      display:inline-block;
+      width:2px;
+      background:#d1d5db;
+    }
+    @media print {
+      body{ width:80mm; }
+      .slip{ border:none; padding:10px; }
+      @page{ margin:0; size:80mm auto; }
+    }
+  </style>
+</head>
+<body>
+<div class="slip">
+
+  <div class="header">
+    <div class="clinic-badge"><span>M</span></div>
+    <div class="clinic-name">${CLINIC.name}</div>
+    <div class="slip-title">Appointment Token</div>
+  </div>
+
+  <div class="token-section">
+    <div class="token-label">Token Number</div>
     <div class="token-num">#${b.token}</div>
-    <hr/>
-    <div class="label">Patient</div>
-    <div class="name">${b.name}</div>
-    <div class="age">Age: ${b.age}</div>
-    <div class="date">${new Date().toLocaleDateString("en-IN",{dateStyle:"full"})}</div>
-    <hr/>
-    <div class="footer">Please wait for your token to be called · ${CLINIC.name}</div>
-    </body></html>
-  `);
+    <div class="visit-badge">${visitType}</div>
+  </div>
+
+  <div class="details">
+    <div class="row">
+      <span class="row-label">Patient</span>
+      <span class="row-val">${b.name}</span>
+    </div>
+    <div class="row">
+      <span class="row-label">Age</span>
+      <span class="row-val">${b.age} yrs</span>
+    </div>
+    <div class="row">
+      <span class="row-label">Phone</span>
+      <span class="row-val">${b.phone}</span>
+    </div>
+    <div class="row">
+      <span class="row-label">Date</span>
+      <span class="row-val">${apptDate}</span>
+    </div>
+    ${apptTime ? `
+    <div class="row">
+      <span class="row-label">Slot</span>
+      <span class="row-val">${apptTime}</span>
+    </div>` : ""}
+    ${reason ? `
+    <div class="row">
+      <span class="row-label">Reason</span>
+      <span class="row-val reason">${reason}</span>
+    </div>` : ""}
+  </div>
+
+  <div class="barcode">
+    ${Array.from({length:28},(_,i)=>`<span style="height:${18+Math.sin(i*1.7)*8}px"></span>`).join("")}
+  </div>
+
+  <div class="footer">
+    <div class="footer-msg">Please wait for your token number<br/>to be called at the consultation room.</div>
+    <div class="footer-addr">${CLINIC.address}<br/>${CLINIC.phone}</div>
+    <div class="printed-at">Printed at ${printedAt}</div>
+  </div>
+
+</div>
+<script>window.onload=()=>{ window.print(); }</script>
+</body>
+</html>`);
   win.document.close();
-  win.print();
 }
 
 // ── Greeting helper ───────────────────────────────────────────
@@ -101,7 +302,7 @@ function DashboardGate({ children }) {
   if (loading) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"80vh" }}>
       <div style={{ textAlign:"center" }}>
-        <div style={{ fontSize:"2.5rem", marginBottom:12 }}>⏳</div>
+        <div style={{ marginBottom:12, color:"var(--gray-300)" }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
         <p style={{ color:"var(--gray-600)" }}>Checking authentication…</p>
       </div>
     </div>
@@ -129,7 +330,7 @@ function DashboardGate({ children }) {
                 <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
                 <path fill="none" d="M0 0h48v48H0z"/>
               </svg>
-            ) : <span style={{ fontSize:"1.1rem" }}>⏳</span>}
+            ) : <span style={{ display:"inline-flex" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>}
             {signingIn ? "Signing in…" : "Sign in with Google"}
           </button>
           {error && <div className="alert alert--danger" style={{ marginTop:20, textAlign:"left" }}>{error}</div>}
@@ -145,6 +346,66 @@ function DashboardGate({ children }) {
 }
 
 // ── PageDashboard ─────────────────────────────────────────────
+
+
+// ── useCountUp — animates a number from 0 to target ─────────
+function useCountUp(target, duration=600) {
+  const [display, setDisplay] = useState(0);
+  const raf = useRef(null);
+  useEffect(() => {
+    if (typeof target !== 'number') { setDisplay(target); return; }
+    const start = performance.now();
+    const tick  = (now) => {
+      const p    = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      setDisplay(Math.round(target * ease));
+      if (p < 1) raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf.current);
+  }, [target]);
+  return display;
+}
+
+// ── AnimatedStatCard — count-up number with pulse on change ──
+function AnimatedStatCard({ value, label, bg, color, accent, icon }) {
+  const isNum   = typeof value === "number";
+  const counted = useCountUp(isNum ? value : 0);
+  const display = isNum ? counted : value;
+  const prevRef = useRef(value);
+  const [pulse, setPulse] = useState(false);
+
+  useEffect(() => {
+    if (prevRef.current !== value && value !== "—") {
+      setPulse(true);
+      setTimeout(() => setPulse(false), 600);
+    }
+    prevRef.current = value;
+  }, [value]);
+
+  return (
+    <div className="glance-card" style={{
+      background: bg,
+      borderRadius: 16,
+      padding: "18px 12px",
+      textAlign: "center",
+      position: "relative",
+      overflow: "hidden",
+      transition: "transform .15s, box-shadow .15s",
+      transform: pulse ? "scale(1.05)" : "scale(1)",
+      boxShadow: pulse ? `0 0 0 3px ${accent}60` : "var(--shadow-sm)",
+    }}>
+      <div style={{ color, marginBottom:4, display:"flex", justifyContent:"center" }}>{icon}</div>
+      <div style={{ fontSize:"2rem", fontWeight:800, color, fontFamily:"var(--font-display)", lineHeight:1 }}>
+        {display}
+      </div>
+      <div style={{ fontSize:".72rem", color, fontWeight:600, marginTop:6, textTransform:"uppercase", letterSpacing:".05em", opacity:.8 }}>
+        {label}
+      </div>
+    </div>
+  );
+}
+
 // ── DoctorView ────────────────────────────────────────────────
 function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, markArrived, todayStr, clock }) {
 
@@ -176,6 +437,12 @@ function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, 
   const slotFmt = (dt) => dt
     ? new Date(dt).toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", hour12:true })
     : "—";
+
+  // inline animated number for DoctorView stats
+  const AnimatedNum = ({ val, color }) => {
+    const n = useCountUp(typeof val === "number" ? val : 0);
+    return <div style={{ fontSize:"2rem", fontWeight:800, color, lineHeight:1 }}>{typeof val === "number" ? n : val}</div>;
+  };
 
   return (
     <div style={{ padding:"24px 0 48px" }}>
@@ -217,13 +484,13 @@ function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, 
 
           {/* Stat pills */}
           {[
-            { label:"Total Booked", value: loading ? "—" : totalToday, bg:"#ede9fe", color:"#6d28d9", icon:"📋" },
-            { label:"Seen Today",   value: loading ? "—" : seenCount,  bg:"#dcfce7", color:"#166534", icon:"✅" },
-            { label:"In Queue",     value: loading ? "—" : remaining,  bg:"#fef3c7", color:"#92400e", icon:"⏳" },
+            { label:"Total Booked", value: loading ? "—" : totalToday, bg:"#ede9fe", color:"#6d28d9", icon:<span style={{display:"inline-flex"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></span> },
+            { label:"Seen Today",   value: loading ? "—" : seenCount,  bg:"#dcfce7", color:"#166534", icon:<span style={{display:"inline-flex"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span> },
+            { label:"In Queue",     value: loading ? "—" : remaining,  bg:"#fef3c7", color:"#92400e", icon:<span style={{display:"inline-flex"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> },
           ].map(s => (
             <div key={s.label} className="dv-stat" style={{ background:s.bg, flex:"1 1 100px", minWidth:100 }}>
               <div style={{ fontSize:"1.5rem", marginBottom:2 }}>{s.icon}</div>
-              <div style={{ fontSize:"2rem", fontWeight:800, color:s.color, lineHeight:1 }}>{s.value}</div>
+              <AnimatedNum val={s.value} color={s.color} />
               <div style={{ fontSize:".72rem", color:s.color, fontWeight:600, marginTop:6 }}>{s.label}</div>
             </div>
           ))}
@@ -244,10 +511,10 @@ function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, 
           {/* ── Now Seeing ─────────────────────────────────── */}
           <div className="dv-now" style={{ gridColumn:"span 2" }}>
             <div style={{ fontSize:".8rem", fontWeight:700, opacity:.7, letterSpacing:".1em", textTransform:"uppercase", marginBottom:10 }}>
-              🩺 Now Seeing
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg> NOW SEEING
             </div>
             {loading ? (
-              <div style={{ opacity:.6, fontSize:"1rem" }}>Loading…</div>
+              <div style={{ opacity:.6, fontSize:"1rem", display:"flex", alignItems:"center", gap:6 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Loading…</div>
             ) : nowSeeing ? (
               <>
                 <div style={{ display:"flex", alignItems:"flex-start", gap:20, flexWrap:"wrap" }}>
@@ -278,12 +545,12 @@ function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, 
                   onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,.28)"}
                   onMouseLeave={e => e.currentTarget.style.background="rgba(255,255,255,.15)"}
                 >
-                  ✅ Done — Call Next Patient
+                  <span style={{display:"inline-flex",alignItems:"center",gap:6}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Done — Call Next Patient</span>
                 </button>
               </>
             ) : (
               <div style={{ textAlign:"center", padding:"20px 0", opacity:.7 }}>
-                <div style={{ fontSize:"2.5rem", marginBottom:10 }}>🎉</div>
+                <div style={{ marginBottom:10 }}><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5.8 11.3L2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12v0c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11v0c-.1.55-.54.94-1.1.94h-.4c-.74 0-1.36.54-1.44 1.27l-.04.27"/><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98v0C9.67 4.9 9.28 5.34 9.28 5.9v.4c0 .74-.54 1.36-1.27 1.44l-.27.04"/><path d="M13.5 8.5 6.93 15.07a2.74 2.74 0 0 0 3.89 3.89l6.57-6.57a2.74 2.74 0 0 0-3.89-3.89z"/></svg></div>
                 <div style={{ fontWeight:700, fontSize:"1.1rem" }}>Queue is clear</div>
                 <div style={{ fontSize:".85rem", marginTop:4, opacity:.8 }}>No patients currently waiting</div>
               </div>
@@ -293,7 +560,7 @@ function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, 
           {/* ── Up Next ────────────────────────────────────── */}
           <div className="dv-card">
             <div style={{ fontWeight:700, fontSize:".85rem", color:"var(--gray-400)", letterSpacing:".08em", textTransform:"uppercase", marginBottom:14 }}>
-              ⏭ Up Next
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg> UP NEXT
             </div>
             {loading ? (
               <div style={{ color:"var(--gray-400)", fontSize:".9rem" }}>Loading…</div>
@@ -329,7 +596,7 @@ function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, 
               return (
                 <div style={{ marginTop:16, paddingTop:14, borderTop:"1px dashed var(--gray-200)" }}>
                   <div style={{ fontSize:".72rem", color:"var(--gray-400)", fontWeight:600, textTransform:"uppercase", letterSpacing:".06em", marginBottom:8 }}>
-                    📅 Not yet arrived ({upcoming.length})
+                    Not yet arrived ({upcoming.length})
                   </div>
                   {upcoming.slice(0,3).map(b => (
                     <div key={b.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", fontSize:".82rem", borderBottom:"1px solid #f3f0ff" }}>
@@ -356,7 +623,7 @@ function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, 
         <div className="dv-card" style={{ marginTop:16 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, flexWrap:"wrap", gap:8 }}>
             <div style={{ fontWeight:700, color:"var(--navy)", fontSize:"1rem" }}>
-              📋 Full Day Schedule
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Full Day Schedule
               <span style={{ marginLeft:10, background:"#ede9fe", color:"#6d28d9", borderRadius:20, padding:"2px 10px", fontSize:".72rem", fontWeight:700 }}>
                 {totalToday} patients
               </span>
@@ -365,10 +632,10 @@ function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, 
           </div>
 
           {loading ? (
-            <div style={{ color:"var(--gray-400)", textAlign:"center", padding:"20px 0" }}>⏳ Loading…</div>
+            <div style={{ color:"var(--gray-400)", textAlign:"center", padding:"20px 0" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Loading…</div>
           ) : todaySchedule.length === 0 ? (
             <div style={{ color:"var(--gray-400)", textAlign:"center", padding:"28px 0", fontSize:".9rem" }}>
-              📭 No appointments booked for today.
+              No appointments booked for today.
             </div>
           ) : (
             <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
@@ -429,7 +696,7 @@ function DoctorView({ bookings, loading, available, toggleAvail, markCompleted, 
                           ✓ Done
                         </button>
                       )}
-                      {b.status === "Completed" && <span style={{ fontSize:".8rem", color:"#16a34a", fontWeight:700 }}>✅</span>}
+                      {b.status === "Completed" && <span style={{ display:"inline-flex", color:"#16a34a" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>}
                     </div>
                   </div>
                 );
@@ -621,12 +888,12 @@ function PageDashboardContent() {
 
   // CHANGE: Single merged stat row — 6 cards only
   const glanceCards = [
-    { label:"Total Today",     value:todayAll.length,        color:"#0f6e56", bg:"#e1f5ee", accent:"#1D9E75", icon:"📋" },
-    { label:"Waiting",         value:waitingCount,           color:"#185fa5", bg:"#e6f1fb", accent:"#378ADD", icon:"⏳" },
-    { label:"Arrived",         value:todayArrivals.length,   color:"#6d28d9", bg:"#f3e8ff", accent:"#9b59b6", icon:"🚶" },
-    { label:"Completed",       value:completedToday.length,  color:"#166534", bg:"#dcfce7", accent:"#16a34a", icon:"✅" },
-    { label:"Pending Future",  value:futurePending.length,   color:"#92400e", bg:"#faeeda", accent:"#ba7517", icon:"📆" },
-    { label:"Avg Wait",        value:avgWait!==null?`${avgWait}m`:"—", color:"#7e1d1d", bg:"#fee2e2", accent:"#dc2626", icon:"⏱️" },
+    { label:"Total Today",     value:todayAll.length,        color:"#0f6e56", bg:"#e1f5ee", accent:"#1D9E75", icon:<span style={{display:"inline-flex"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></span> },
+    { label:"Waiting",         value:waitingCount,           color:"#185fa5", bg:"#e6f1fb", accent:"#378ADD", icon:<span style={{display:"inline-flex"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> },
+    { label:"Arrived",         value:todayArrivals.length,   color:"#6d28d9", bg:"#f3e8ff", accent:"#9b59b6", icon:<span style={{display:"inline-flex"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="1"/><path d="M9 20l1.5-4.5L12 17l1.5-4.5L15 20"/><path d="M6.5 10.5l2-3 3 1.5 2-3"/></svg></span> },
+    { label:"Completed",       value:completedToday.length,  color:"#166534", bg:"#dcfce7", accent:"#16a34a", icon:<span style={{display:"inline-flex"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span> },
+    { label:"Pending Future",  value:futurePending.length,   color:"#92400e", bg:"#faeeda", accent:"#ba7517", icon:<span style={{display:"inline-flex"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> },
+    { label:"Avg Wait",        value:avgWait!==null?`${avgWait}m`:"—", color:"#7e1d1d", bg:"#fee2e2", accent:"#dc2626", icon:<span style={{display:"inline-flex"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> },
   ];
 
   return (
@@ -696,7 +963,7 @@ function PageDashboardContent() {
                     transform: viewMode==="staff" ? "translateY(-1px)" : "none",
                     transition:"all .22s cubic-bezier(.4,0,.2,1)",
                   }}>
-                  🖥 Staff View
+                  Staff View
                 </button>
                 <button
                   onClick={() => setViewMode("doctor")}
@@ -709,11 +976,11 @@ function PageDashboardContent() {
                     transform: viewMode==="doctor" ? "translateY(-1px)" : "none",
                     transition:"all .22s cubic-bezier(.4,0,.2,1)",
                   }}>
-                  🩺 Doctor View
+                  Doctor View
                 </button>
               </div>
               <div style={{ marginTop:9, fontSize:".72rem", fontWeight:600, letterSpacing:".08em", textTransform:"uppercase", opacity:.65, color:"#fff" }}>
-                {viewMode === "staff" ? "📋 Managing queue & bookings" : "🩺 Doctor patient view"}
+                {viewMode === "staff" ? "Managing queue & bookings" : "Doctor patient view"}
               </div>
             </div>
 
@@ -769,7 +1036,12 @@ function PageDashboardContent() {
             <div className="ctrl-btns">
               <button className="btn btn--primary btn--sm" onClick={callNextPatient}>📢 Call Next</button>
               <button className="btn btn--outline btn--sm" onClick={()=>refresh(false)} disabled={refreshing}>
-                {refreshing?"⏳ Syncing…":"🔄 Refresh"}
+                {refreshing ? "Syncing…" : (
+                  <span style={{display:"inline-flex",alignItems:"center",gap:4}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                    Refresh
+                  </span>
+                )}
               </button>
               <button className="btn btn--outline btn--sm" onClick={exportExcel}>📥 Export Excel</button>
               {/* CHANGE: Clear All separated with divider */}
@@ -778,7 +1050,7 @@ function PageDashboardContent() {
             </div>
           </div>
           <div className={`alert ${available?"alert--success":"alert--danger"}`} style={{ marginTop:12, marginBottom:0 }}>
-            {available ? "✅ Bookings are open. Patients can book appointments." : "🚫 Bookings are disabled. Patients cannot book."}
+            {available ? "Bookings are open. Patients can book appointments." : "Bookings are disabled. Patients cannot book."}
           </div>
         </div>
       </div>
@@ -790,28 +1062,14 @@ function PageDashboardContent() {
         </p>
         <div className="glance-grid">
           {glanceCards.map(s => (
-            <div key={s.label} style={{
-              background:s.bg,
-              borderLeft:`4px solid ${s.accent}`,
-              borderRadius:12,
-              padding:"14px 12px",
-              textAlign:"center",
-            }}>
-              <div style={{ fontSize:"1.1rem", marginBottom:4 }}>{s.icon}</div>
-              <div style={{ fontSize:"1.8rem", fontWeight:800, color:s.color, lineHeight:1 }}>
-                {loading ? "—" : s.value}
-              </div>
-              <div style={{ fontSize:".72rem", color:s.color, marginTop:6, fontWeight:600, lineHeight:1.3 }}>
-                {s.label}
-              </div>
-            </div>
+            <AnimatedStatCard key={s.label} {...s} value={loading ? "—" : s.value} />
           ))}
         </div>
 
         {/* Future pending alert */}
         {futurePending.length > 0 && (
           <div style={{ background:"#f3e8ff", border:"1px solid #c084fc", borderLeft:"4px solid #9b59b6", borderRadius:10, padding:"12px 18px", marginTop:12, display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
-            <span style={{ fontSize:"1.2rem" }}>⏳</span>
+            <span style={{ display:"inline-flex" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
             <div style={{ flex:1 }}>
               <strong style={{ color:"#7e22ce" }}>{futurePending.length} future appointment{futurePending.length>1?"s":""} waiting</strong>
               <div style={{ fontSize:".82rem", color:"#6b21a8", marginTop:3 }}>
@@ -844,7 +1102,7 @@ function PageDashboardContent() {
       <div className="container" style={{ marginBottom:8 }}>
         <div className="charts-grid">
           <div className="dash-card" style={{ minWidth:0 }}>
-            <h3 className="dash-card__title" style={{ marginBottom:16 }}>📊 Patients — Last 7 Days</h3>
+            <h3 className="dash-card__title" style={{ marginBottom:16 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg> Patients — Last 7 Days</h3>
             {bookings.length===0 ? <div style={{ color:"var(--gray-400)",textAlign:"center",padding:"24px 0",fontSize:".9rem" }}>No data yet</div> : (
               <ResponsiveContainer width="100%" height={190}>
                 <BarChart data={last7Days} barCategoryGap="30%" margin={{top:4,right:4,left:-16,bottom:0}}>
@@ -860,7 +1118,7 @@ function PageDashboardContent() {
             <p style={{ fontSize:".73rem",color:"var(--gray-400)",marginTop:6,textAlign:"right" }}>🟣 Dark = today · Light = past</p>
           </div>
           <div className="dash-card" style={{ minWidth:0 }}>
-            <h3 className="dash-card__title" style={{ marginBottom:16 }}>🍩 Today's Patient Status</h3>
+            <h3 className="dash-card__title" style={{ marginBottom:16, display:"flex", alignItems:"center", gap:8 }}><span style={{color:"var(--teal)",display:"inline-flex"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>Today's Patient Status</h3>
             {donutData.length===0 ? <div style={{ color:"var(--gray-400)",textAlign:"center",padding:"24px 0",fontSize:".9rem" }}>No patients today yet</div> : (
               <ResponsiveContainer width="100%" height={190}>
                 <PieChart>
@@ -885,7 +1143,7 @@ function PageDashboardContent() {
         <div className="dash-card">
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:8, marginBottom:16 }}>
             <h3 className="dash-card__title" style={{ marginBottom:0 }}>
-              🗓 Today's Schedule
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Today's Schedule
               <span style={{ marginLeft:10, background:"#ede9fe", color:"#6d28d9", borderRadius:20, padding:"2px 10px", fontSize:".75rem", fontWeight:700, verticalAlign:"middle" }}>
                 {todaySchedule.length} booked
               </span>
@@ -894,10 +1152,10 @@ function PageDashboardContent() {
           </div>
 
           {loading ? (
-            <div style={{ color:"var(--gray-400)", textAlign:"center", padding:"24px 0" }}>⏳ Loading…</div>
+            <div style={{ color:"var(--gray-400)", textAlign:"center", padding:"24px 0" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Loading…</div>
           ) : todaySchedule.length === 0 ? (
             <div style={{ color:"var(--gray-400)", textAlign:"center", padding:"32px 0", fontSize:".9rem" }}>
-              📭 No online appointments booked for today yet.
+              No online appointments booked for today yet.
             </div>
           ) : (
             <div className="table-wrap">
@@ -950,7 +1208,7 @@ function PageDashboardContent() {
                                 onClick={() => markCompleted(b.id)}>✓ Done</button>
                             )}
                             {b.status === "Completed" && (
-                              <span style={{ fontSize:".8rem", color:"#16a34a", fontWeight:600 }}>✅ Seen</span>
+                              <span style={{ fontSize:".8rem", color:"#16a34a", fontWeight:600 }}>Seen</span>
                             )}
                           </div>
                         </td>
@@ -968,7 +1226,7 @@ function PageDashboardContent() {
       {tomorrowAll.length > 0 && (
         <div className="container" style={{ marginBottom:8 }}>
           <div className="dash-card" style={{ borderLeft:"4px solid #85b7eb", background:"#f0f7ff" }}>
-            <h3 className="dash-card__title" style={{ color:"#185fa5" }}>📅 Tomorrow's Bookings ({tomorrowAll.length})</h3>
+            <h3 className="dash-card__title" style={{ color:"#185fa5" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Tomorrow's Bookings ({tomorrowAll.length})</h3>
             <div style={{ display:"flex", flexWrap:"wrap", gap:10, marginTop:10 }}>
               {tomorrowAll.slice(0,5).map(b=>(
                 <div key={b.id} style={{ background:"#fff",border:"1px solid #bfdbfe",borderRadius:8,padding:"8px 14px",fontSize:".85rem" }}>
@@ -986,7 +1244,7 @@ function PageDashboardContent() {
       {todayQueue.length > 0 && (
         <div className="container" style={{ marginBottom:8 }}>
           <div className="dash-card">
-            <h3 className="dash-card__title">📋 Today's Queue ({todayQueue.length})</h3>
+            <h3 className="dash-card__title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Today's Queue ({todayQueue.length})</h3>
             <div className="table-wrap">
               <table>
                 <thead>
@@ -1007,7 +1265,8 @@ function PageDashboardContent() {
                           <button className="btn btn--success btn--sm" style={{ padding:"4px 10px" }} onClick={()=>markCompleted(b.id)}>✓ Done</button>
                           {/* CHANGE: Print token slip */}
                           <button className="btn btn--outline btn--sm" style={{ padding:"4px 10px", display:"flex", alignItems:"center", gap:4 }} onClick={()=>printTokenSlip(b)}>
-                            🖨 Slip
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                            Slip
                           </button>
                         </div>
                       </td>
@@ -1024,7 +1283,7 @@ function PageDashboardContent() {
       {waitingOnline.length > 0 && (
         <div className="container" style={{ marginBottom:8 }}>
           <div className="dash-card">
-            <h3 className="dash-card__title">⏳ Waiting Online Bookings ({waitingOnline.length})</h3>
+            <h3 className="dash-card__title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Waiting Online Bookings ({waitingOnline.length})</h3>
             <div className="table-wrap">
               <table>
                 <thead>
@@ -1106,7 +1365,7 @@ function PageDashboardContent() {
       <div className="container" style={{ marginBottom:8 }}>
         <button className={`btn ${showHistory?"btn--primary":"btn--outline"}`}
           onClick={()=>setShowHistory(h=>!h)} style={{ display:"inline-flex",alignItems:"center",gap:8 }}>
-          🗓 {showHistory?"Hide History (Last 30 Days)":"Show 30-Day History"}
+          {showHistory?"Hide History (Last 30 Days)":"Show 30-Day History"}
         </button>
         {showHistory && <span style={{ marginLeft:12,fontSize:".85rem",color:"var(--gray-500)" }}>Showing from {thirtyDaysAgo.toLocaleDateString("en-IN",{dateStyle:"medium"})} onwards</span>}
       </div>
@@ -1125,7 +1384,7 @@ function PageDashboardContent() {
           }}
         >
           <div className="dash-card__head">
-            <h3 className="dash-card__title">📋 {showHistory?"Last 30 Days — All Bookings":"All Bookings"}</h3>
+            <h3 className="dash-card__title">{showHistory?"Last 30 Days — All Bookings":"All Bookings"}</h3>
             <input className="form-control" style={{ maxWidth:240 }} placeholder="Search by name or phone…" value={search} onChange={e=>setSearch(e.target.value)}/>
           </div>
           <div className="tabs">
@@ -1139,9 +1398,9 @@ function PageDashboardContent() {
             ))}
           </div>
           {loading ? (
-            <div className="no-data" style={{ padding:"40px 20px" }}><div style={{ fontSize:"2rem",marginBottom:12 }}>⏳</div><p>Loading bookings from database…</p></div>
+            <div className="no-data" style={{ padding:"40px 20px" }}><div style={{ marginBottom:12 }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 28 14"/></svg></div><p>Loading bookings from database…</p></div>
           ) : filtered.length===0 ? (
-            <div className="no-data">📋 No bookings found.</div>
+            <div className="no-data">No bookings found.</div>
           ) : (
             <div className="table-wrap">
               <table>
